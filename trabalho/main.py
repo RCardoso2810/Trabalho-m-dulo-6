@@ -17,7 +17,7 @@ from jogo import (
     total_jogos, NIVEIS_JOGO, ESTADOS_JOGO,
     base_jogos,
 )
-from utils import (
+from Utils import (
     validar_nome, validar_data_nascimento, validar_genero,
     validar_nacionalidade, validar_contacto, validar_saldo,
     validar_nivel, validar_estado, validar_sim_nao,

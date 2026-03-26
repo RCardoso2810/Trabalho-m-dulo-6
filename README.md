@@ -42,5 +42,4 @@ Define as regras e os requisitos de entrada para cada modalidade.
 - Configuração de Retorno: House Edge ajustável pelo administrador.
 """
 
-# Para visualizar o conteúdo no terminal:
-print(readme_projeto)
+

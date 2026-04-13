@@ -11,7 +11,6 @@ from datetime import date
 #  SETS DE CARACTERES VALIDOS — usados nas validacoes
 # ══════════════════════════════════════════════════════════════
 
-# Set de letras aceites em nomes (minusculas e maiusculas + acentuadas)
 LETRAS_NOME = set(
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -20,7 +19,6 @@ LETRAS_NOME = set(
     " -"
 )
 
-# Set de letras para nomes de jogos (mais permissivo)
 LETRAS_JOGO = set(
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -29,10 +27,8 @@ LETRAS_JOGO = set(
     "0123456789 -'."
 )
 
-# Set de digitos
 DIGITOS = set("0123456789")
 
-# Set de caracteres validos num numero de telefone
 CHARS_TELEFONE = set("0123456789 +-() ")
 
 # Tuplos de valores validos
@@ -42,7 +38,7 @@ ESTADOS_VALIDOS = ("ATIVO", "INATIVO")
 
 
 # ══════════════════════════════════════════════════════════════
-#  CORES ANSI (para mostrar erros formatados)
+#  CORES ANSI
 # ══════════════════════════════════════════════════════════════
 
 RESET    = "\033[0m"
@@ -53,7 +49,6 @@ CINZA    = "\033[38;5;245m"
 
 # ══════════════════════════════════════════════════════════════
 #  RESULTADO DE VALIDACAO
-#  Dicionario: { "valido": bool, "mensagem": str, "valor": any }
 # ══════════════════════════════════════════════════════════════
 
 def _ok(valor):
@@ -68,7 +63,6 @@ def _erro(mensagem):
 # ══════════════════════════════════════════════════════════════
 
 def _title(texto):
-    # Title case manual sem modulo re
     palavras = str(texto).strip().split()
     resultado = []
     for p in palavras:
@@ -78,7 +72,6 @@ def _title(texto):
 
 
 def _tem_digito(texto):
-    # Verifica se algum caracter esta no set DIGITOS
     for c in texto:
         if c in DIGITOS:
             return True
@@ -86,7 +79,6 @@ def _tem_digito(texto):
 
 
 def _todos_chars_validos(texto, chars_validos):
-    # Verifica se todos os caracteres estao no set fornecido
     for c in texto:
         if c not in chars_validos:
             return False
@@ -94,9 +86,6 @@ def _todos_chars_validos(texto, chars_validos):
 
 
 def _e_email_valido(texto):
-    # Validacao basica de email sem re:
-    # deve ter exactamente um '@', com texto antes e depois,
-    # e um '.' apos o '@'
     partes_arroba = texto.split("@")
     if len(partes_arroba) != 2:
         return False
@@ -106,10 +95,8 @@ def _e_email_valido(texto):
         return False
     if " " in antes or " " in depois:
         return False
-    # Deve ter pelo menos um ponto apos o '@'
     if "." not in depois:
         return False
-    # Parte apos o ultimo ponto nao pode estar vazia
     partes_ponto = depois.split(".")
     for parte in partes_ponto:
         if len(parte) == 0:
@@ -118,9 +105,6 @@ def _e_email_valido(texto):
 
 
 def _e_telefone_valido(texto):
-    # Validacao basica de telefone sem re:
-    # so pode ter digitos, espacos, +, -, (, )
-    # deve ter entre 7 e 20 caracteres (sem espacos)
     sem_espacos = texto.replace(" ", "")
     if len(sem_espacos) < 7 or len(sem_espacos) > 20:
         return False
@@ -152,7 +136,6 @@ def validar_nome(nome):
             "   Ex: Ana-Rita Sousa"
         )
 
-    # Lista de palavras do nome
     partes = nome.split()
 
     if len(partes) < 2:
@@ -169,7 +152,6 @@ def validar_nome(nome):
                 "   Ex: Rodrigo Manel"
             )
         if not parte[0].isupper():
-            # Construir sugestao corrigida numa lista e juntar
             sugestao = []
             for p in partes:
                 sugestao.append(p[0].upper() + p[1:].lower() if p else p)
@@ -196,7 +178,6 @@ def validar_data_nascimento(data_str, idade_minima=18):
             "   Ex: 20/10/1995"
         )
 
-    # Dividir em lista de partes
     partes = data_str.split("/")
     if len(partes) != 3:
         return _erro(
@@ -205,7 +186,6 @@ def validar_data_nascimento(data_str, idade_minima=18):
             "   Ex       : 20/10/1995"
         )
 
-    # Verificar que cada parte e composta apenas por digitos
     for parte in partes:
         if not _todos_chars_validos(parte, DIGITOS):
             return _erro(
@@ -226,9 +206,7 @@ def validar_data_nascimento(data_str, idade_minima=18):
             "   Ex: 20/10/1995"
         )
 
-    # Tuplo com os dias maximos por mes (ano comum)
     dias_por_mes = (0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    # Verificar ano bissexto
     bissexto = (ano % 4 == 0 and ano % 100 != 0) or (ano % 400 == 0)
     max_dias = dias_por_mes[mes] if mes != 2 else (29 if bissexto else 28)
 
@@ -253,7 +231,6 @@ def validar_data_nascimento(data_str, idade_minima=18):
             "   Ex       : 20/10/1995"
         )
 
-    # Tuplo de comparacao (mes, dia)
     hoje_par = (hoje.month, hoje.day)
     nasc_par = (nasc.month, nasc.day)
     idade = hoje.year - nasc.year - (hoje_par < nasc_par)
@@ -269,7 +246,6 @@ def validar_data_nascimento(data_str, idade_minima=18):
         )
 
     data_fmt = f"{dia:02d}/{mes:02d}/{ano}"
-    # Devolve dicionario com data e idade
     return _ok({"data": data_fmt, "idade": idade})
 
 
@@ -280,7 +256,6 @@ def validar_data_nascimento(data_str, idade_minima=18):
 def validar_genero(genero):
     g = str(genero).strip().upper()
 
-    # Dicionario de mapeamento de variacoes para valor canonico
     mapa_genero = {
         "M"          : "M",
         "MASCULINO"  : "M",
@@ -357,7 +332,6 @@ def validar_contacto(contacto):
             "   Ex: 912345678 / jose@email.com"
         )
 
-    # Dividir em lista de partes (telefone e/ou email separados por '/')
     partes = []
     for parte in c.split("/"):
         partes.append(parte.strip())
@@ -382,11 +356,8 @@ def validar_contacto(contacto):
 # ══════════════════════════════════════════════════════════════
 
 def validar_saldo(saldo):
-    # Substituir virgula por ponto para aceitar formato europeu
     s = str(saldo).replace(",", ".").strip()
 
-    # Verificar que e um numero valido manualmente
-    # Permitido: digitos, um ponto decimal, sinal negativo no inicio
     chars_numero = set("0123456789.")
     s_teste = s[1:] if s.startswith("-") else s
     if not s_teste or not _todos_chars_validos(s_teste, chars_numero):
@@ -396,7 +367,6 @@ def validar_saldo(saldo):
             "   Ex: 500   ou   1250.75   ou   0"
         )
 
-    # Nao pode ter mais de um ponto
     if s_teste.count(".") > 1:
         return _erro(
             f"✖  Saldo invalido: \"{saldo}\".\n"
@@ -440,7 +410,6 @@ def validar_nivel(nivel, etiqueta="Nivel"):
 def validar_estado(estado, etiqueta="Estado"):
     v = str(estado).strip().upper()
 
-    # Dicionario de mapeamento de variacoes para valor canonico
     mapa_estado = {
         "ATIVO"   : "ATIVO",
         "ACTIVO"  : "ATIVO",
@@ -469,7 +438,6 @@ def validar_estado(estado, etiqueta="Estado"):
 def validar_sim_nao(valor, campo="Campo"):
     v = str(valor).strip().upper()
 
-    # Dicionario de mapeamento de variacoes
     mapa_sn = {
         "SIM": "SIM", "S": "SIM", "YES": "SIM", "Y": "SIM",
         "NAO": "NAO", "N": "NAO", "NO" : "NAO",
@@ -592,105 +560,3 @@ def validar_nome_jogo(nome):
         )
 
     return _ok(_title(n))
-
-
-# ══════════════════════════════════════════════════════════════
-#  FUNCOES CENTRAIS DE VALIDACAO POR MODULO
-# ══════════════════════════════════════════════════════════════
-
-def validar_campo_cliente(campo, valor):
-    """
-    Valida um campo de cliente pelo nome.
-    Devolve dicionario: { "valido": bool, "mensagem": str, "valor": any }
-    """
-    campo = str(campo).lower().strip()
-
-    # Dicionario de despacho: campo -> funcao de validacao
-    despacho = {
-        "nome"            : validar_nome,
-        "data_nascimento" : validar_data_nascimento,
-        "genero"          : validar_genero,
-        "nacionalidade"   : validar_nacionalidade,
-        "contacto"        : validar_contacto,
-        "saldo"           : validar_saldo,
-        "nivel"           : validar_nivel,
-        "estado"          : validar_estado,
-    }
-
-    if campo not in despacho:
-        # Lista dos campos validos para mostrar no erro
-        campos_lista = list(despacho.keys())
-        return _erro(
-            f"✖  Campo desconhecido: \"{campo}\".\n"
-            f"   Campos validos: {' | '.join(campos_lista)}"
-        )
-
-    fn = despacho[campo]
-    return fn(valor)
-
-
-def validar_campo_jogo(campo, valor):
-    """
-    Valida um campo de jogo pelo nome.
-    Devolve dicionario: { "valido": bool, "mensagem": str, "valor": any }
-    """
-    campo = str(campo).lower().strip()
-
-    # Dicionario de despacho para campos simples
-    despacho = {
-        "nome"         : validar_nome_jogo,
-        "custo_minimo" : validar_custo_minimo,
-        "saldo_jogo"   : validar_saldo_jogo,
-        "retorno"      : validar_retorno,
-        "nivel_acesso" : lambda v: validar_nivel(v, "Nivel de acesso"),
-        "estado"       : validar_estado,
-    }
-
-    # Set dos campos de tipo SIM/NAO
-    campos_sn = {"dealer", "tabuleiro", "pecas", "cartas", "dados", "maquina"}
-
-    if campo in despacho:
-        return despacho[campo](valor)
-
-    if campo in campos_sn:
-        return validar_sim_nao(valor, campo)
-
-    # Lista de todos os campos validos
-    todos_campos = list(despacho.keys()) + list(campos_sn)
-    return _erro(
-        f"✖  Campo desconhecido: \"{campo}\".\n"
-        f"   Campos validos: {' | '.join(todos_campos)}"
-    )
-
-
-# ══════════════════════════════════════════════════════════════
-#  MOSTRAR VALIDACAO — formata e imprime o erro no terminal
-# ══════════════════════════════════════════════════════════════
-
-def mostrar_validacao(resultado, pausa_auto=True):
-    """
-    Recebe o dicionario de validacao e imprime a mensagem formatada.
-    Devolve True se valido, False se invalido.
-    """
-    if resultado["valido"]:
-        return True
-
-    # Dividir a mensagem em lista de linhas
-    linhas = resultado["mensagem"].split("\n")
-    print()
-    for linha_msg in linhas:
-        linha_msg = linha_msg.strip()
-        if not linha_msg:
-            continue
-        if linha_msg.startswith("✖"):
-            print(f"  {VERMELHO}{linha_msg}{RESET}")
-        elif linha_msg.lower().startswith("ex") or linha_msg.lower().startswith("correcto") or linha_msg.lower().startswith("recebido"):
-            print(f"  {AMARELO}{linha_msg}{RESET}")
-        else:
-            print(f"  {CINZA}{linha_msg}{RESET}")
-
-    if pausa_auto:
-        print(f"\n  {CINZA}Prima ENTER para tentar novamente...{RESET}")
-        input()
-
-    return False

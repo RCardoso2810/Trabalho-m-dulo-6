@@ -2,9 +2,31 @@
 #  FICHEIRO 1 — cliente.py
 #  CRUD de clientes usando dicionarios de dicionarios
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
+#  As validacoes de cliente vivem aqui (importadas de utils)
 # ══════════════════════════════════════════════════════════════
 
 from datetime import date
+from utils import (
+    validar_nome,
+    validar_data_nascimento,
+    validar_genero,
+    validar_nacionalidade,
+    validar_contacto,
+    validar_saldo,
+    validar_nivel,
+    validar_estado,
+)
+
+# ── Re-exportar para que a main possa importar tudo de cliente ──
+# A main nao precisa de saber que as utils existem
+validar_nome_cliente       = validar_nome
+validar_nascimento_cliente = validar_data_nascimento
+validar_genero_cliente     = validar_genero
+validar_nac_cliente        = validar_nacionalidade
+validar_contacto_cliente   = validar_contacto
+validar_saldo_cliente      = validar_saldo
+validar_nivel_cliente      = validar_nivel
+validar_estado_cliente     = validar_estado
 
 # Tuplos de valores validos (imutaveis por definicao)
 GENEROS_VALIDOS = ("M", "F", "OUTRO")
@@ -15,8 +37,20 @@ ESTADOS_VALIDOS = ("ATIVO", "INATIVO")
 base_clientes = {}
 
 # Lista usada como pilha para controlo do contador de IDs
-# pilha_ids[0] guarda sempre o proximo numero disponivel
 pilha_ids_cliente = [1]
+
+# Dicionario de despacho de validacao — campo -> funcao
+# Usado internamente pelo modulo e exportado para a main
+VALIDACOES_CLIENTE = {
+    "nome"            : validar_nome,
+    "data_nascimento" : validar_data_nascimento,
+    "genero"          : validar_genero,
+    "nacionalidade"   : validar_nacionalidade,
+    "contacto"        : validar_contacto,
+    "saldo"           : validar_saldo,
+    "nivel"           : validar_nivel,
+    "estado"          : validar_estado,
+}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -24,7 +58,6 @@ pilha_ids_cliente = [1]
 # ══════════════════════════════════════════════════════════════
 
 def _calcular_idade(data_nasc_str):
-    # Separar a string em partes usando lista
     partes = str(data_nasc_str).strip().split("/")
     if len(partes) != 3:
         raise ValueError("Formato invalido. Use DD/MM/AAAA")
@@ -33,7 +66,6 @@ def _calcular_idade(data_nasc_str):
     ano  = int(partes[2])
     nasc = date(ano, mes, dia)
     hoje = date.today()
-    # Tuplo usado para comparacao de (mes, dia)
     nascimento_par = (nasc.month, nasc.day)
     hoje_par       = (hoje.month, hoje.day)
     idade = hoje.year - nasc.year - (hoje_par < nascimento_par)
@@ -44,11 +76,10 @@ def _calcular_idade(data_nasc_str):
 
 
 # ══════════════════════════════════════════════════════════════
-#  AUXILIAR — formatar nome com title case sem modulo re
+#  AUXILIAR — title case sem modulo re
 # ══════════════════════════════════════════════════════════════
 
 def _title(texto):
-    # Divide em lista de palavras e capitaliza cada uma
     palavras = str(texto).strip().split()
     capitalizadas = []
     for p in palavras:
@@ -82,26 +113,21 @@ def criar_cliente(nome, data_nasc, genero, nacionalidade,
         "estado"         : "ATIVO"
     }
     """
-    # Gerar ID usando a pilha de contador
     id_cliente = f"CLI{pilha_ids_cliente[0]:04d}"
     pilha_ids_cliente[0] += 1
 
-    # Tuplo devolvido por _calcular_idade: (data_fmt, idade)
     resultado_data = _calcular_idade(data_nasc)
     data_fmt = resultado_data[0]
     idade    = resultado_data[1]
 
-    # Validar genero contra o tuplo de valores validos
     genero_upper = str(genero).strip().upper()
     if genero_upper not in GENEROS_VALIDOS:
         genero_upper = "OUTRO"
 
-    # Validar nivel contra o tuplo de valores validos
     nivel_upper = str(nivel).strip().upper()
     if nivel_upper not in NIVEIS_VALIDOS:
         nivel_upper = "BRONZE"
 
-    # Validar estado contra o tuplo de valores validos
     estado_upper = str(estado).strip().upper()
     if estado_upper not in ESTADOS_VALIDOS:
         estado_upper = "ATIVO"
@@ -111,7 +137,6 @@ def criar_cliente(nome, data_nasc, genero, nacionalidade,
 
     hoje = date.today()
 
-    # Dicionario do cliente com todos os campos
     cliente = {
         "id"             : id_cliente,
         "nome"           : _title(nome),
@@ -125,7 +150,6 @@ def criar_cliente(nome, data_nasc, genero, nacionalidade,
         "nivel"          : nivel_upper,
         "estado"         : estado_upper,
     }
-    # Guardar no dicionario principal usando o ID como chave
     base_clientes[id_cliente] = cliente
     return cliente
 
@@ -135,13 +159,11 @@ def criar_cliente(nome, data_nasc, genero, nacionalidade,
 # ══════════════════════════════════════════════════════════════
 
 def ler_cliente_por_id(id_cliente):
-    # Acesso directo ao dicionario pela chave
     return base_clientes.get(str(id_cliente).upper(), None)
 
 
 def ler_cliente_por_nome(nome):
     nome_fmt = _title(str(nome).strip())
-    # Iterar sobre os values do dicionario
     for c in base_clientes.values():
         if c["nome"] == nome_fmt:
             return c
@@ -149,7 +171,6 @@ def ler_cliente_por_nome(nome):
 
 
 def listar_todos_clientes():
-    # Devolve lista de todos os values do dicionario
     return list(base_clientes.values())
 
 
@@ -162,7 +183,7 @@ def total_clientes():
 # ══════════════════════════════════════════════════════════════
 
 # Tuplo dos campos que podem ser editados
-CAMPOS_EDITAVEIS = (
+CAMPOS_EDITAVEIS_CLIENTE = (
     "nome", "data_nascimento", "genero",
     "nacionalidade", "contacto", "saldo", "nivel", "estado"
 )
@@ -172,8 +193,8 @@ def atualizar_cliente(id_cliente, campo, valor):
     if not c:
         raise KeyError(f"Cliente '{id_cliente}' nao encontrado.")
     campo = campo.lower().strip()
-    if campo not in CAMPOS_EDITAVEIS:
-        raise KeyError(f"Campo '{campo}' invalido. Editaveis: {CAMPOS_EDITAVEIS}")
+    if campo not in CAMPOS_EDITAVEIS_CLIENTE:
+        raise KeyError(f"Campo '{campo}' invalido. Editaveis: {CAMPOS_EDITAVEIS_CLIENTE}")
 
     if campo == "nome":
         if not str(valor).strip():

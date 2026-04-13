@@ -1,28 +1,42 @@
 # ══════════════════════════════════════════════════════════════
 #  FICHEIRO 3 — main.py
-#  Menu principal — conecta cliente.py, jogo.py e utils.py
+#  Menu principal — conecta cliente.py e jogo.py
+#  A main NAO importa utils — recebe tudo ja pronto dos modulos
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
 # ══════════════════════════════════════════════════════════════
 
+# ── Importacoes de CLIENTE (CRUD + validacoes de cliente) ────
 from cliente import (
-    criar_cliente, ler_cliente_por_id,
-    listar_todos_clientes, atualizar_cliente, remover_cliente,
-    total_clientes, NIVEIS_VALIDOS, ESTADOS_VALIDOS, GENEROS_VALIDOS,
+    criar_cliente,
+    ler_cliente_por_id,
+    listar_todos_clientes,
+    atualizar_cliente,
+    remover_cliente,
+    total_clientes,
+    NIVEIS_VALIDOS,
+    ESTADOS_VALIDOS,
+    GENEROS_VALIDOS,
+    CAMPOS_EDITAVEIS_CLIENTE,
+    VALIDACOES_CLIENTE,        # dicionario campo -> funcao de validacao
     base_clientes,
 )
+
+# ── Importacoes de JOGO (CRUD + validacoes de jogo) ─────────
 from jogo import (
-    criar_jogo, ler_jogo_por_id,
-    listar_todos_jogos, listar_jogos_ativos,
-    atualizar_jogo, remover_jogo,
-    total_jogos, NIVEIS_JOGO, ESTADOS_JOGO,
+    criar_jogo,
+    ler_jogo_por_id,
+    listar_todos_jogos,
+    listar_jogos_ativos,
+    atualizar_jogo,
+    remover_jogo,
+    total_jogos,
+    NIVEIS_JOGO,
+    ESTADOS_JOGO,
+    CAMPOS_EDITAVEIS_JOGO,
+    CAMPOS_TIPOS,
+    VALIDACOES_JOGO,           # dicionario campo -> funcao de validacao
+    VALIDACOES_TIPOS_JOGO,     # dicionario tipo  -> funcao de validacao
     base_jogos,
-)
-from Utils import (
-    validar_nome, validar_data_nascimento, validar_genero,
-    validar_nacionalidade, validar_contacto, validar_saldo,
-    validar_nivel, validar_estado, validar_sim_nao,
-    validar_custo_minimo, validar_retorno, validar_saldo_jogo,
-    validar_nome_jogo,
 )
 
 # ══════════════════════════════════════════════════════════════
@@ -75,7 +89,6 @@ def pausa(msg="  Prima ENTER para continuar..."):
 
 
 def linha(estilo="=", cor=OURO):
-    # Dicionario de mapeamento de estilos para caracteres
     mapa = {"=": "═", "-": "─", ".": "·"}
     c = mapa.get(estilo, estilo)
     print(f"{cor}{c * LARGURA}{RESET}")
@@ -107,7 +120,6 @@ def mostrar_ok(msg):
 
 
 def tag_nivel(nivel):
-    # Dicionario de cores por nivel
     mapa = {
         "BRONZE" : "\033[38;5;130m",
         "PRATA"  : "\033[38;5;250m",
@@ -130,7 +142,6 @@ def sim_nao_cor(valor):
 
 # ══════════════════════════════════════════════════════════════
 #  HELPER: pedir campo com validacao em loop
-#  Usa lista interna para acumular tentativas (pilha de tentativas)
 # ══════════════════════════════════════════════════════════════
 
 def _pedir_validado(prompt, fn_validar, cor=CIANO):
@@ -139,19 +150,17 @@ def _pedir_validado(prompt, fn_validar, cor=CIANO):
     Devolve o valor ja validado e convertido.
     Usa lista como pilha de tentativas para historico interno.
     """
-    # Lista usada como pilha de tentativas (ultima tentativa no topo)
-    tentativas = []
+    tentativas = []   # lista usada como pilha de tentativas
 
     while True:
         raw = pedir(prompt, cor)
-        tentativas.append(raw)          # empilha a tentativa
+        tentativas.append(raw)
 
-        res = fn_validar(raw)           # dicionario de resultado
+        res = fn_validar(raw)
 
         if res["valido"]:
             return res["valor"]
 
-        # Mostrar mensagem de erro linha a linha
         linhas = res["mensagem"].split("\n")
         print()
         for linha_msg in linhas:
@@ -261,7 +270,7 @@ def menu_principal():
 # ══════════════════════════════════════════════════════════════
 
 def _listar_ids_clientes():
-    todos = listar_todos_clientes()    # lista de dicionarios
+    todos = listar_todos_clientes()
     if not todos:
         return
     print(f"\n  {CINZA}Clientes registados:{RESET}")
@@ -272,7 +281,7 @@ def _listar_ids_clientes():
 
 
 def _listar_ids_jogos():
-    todos = listar_todos_jogos()       # lista de dicionarios
+    todos = listar_todos_jogos()
     if not todos:
         return
     print(f"\n  {CINZA}Jogos registados:{RESET}")
@@ -291,51 +300,51 @@ def adicionar_cliente():
     print(f"\n  {CINZA}Preencha os dados do novo cliente:{RESET}")
     print(f"  {CINZA}(Cada campo e validado — sera avisado se algo estiver errado){RESET}\n")
 
+    # Usar VALIDACOES_CLIENTE vindo de cliente.py — sem tocar em utils
     nome = _pedir_validado(
         "Nome completo                   :",
-        validar_nome
+        VALIDACOES_CLIENTE["nome"]
     )
 
     res_data = _pedir_validado(
         "Data de nascimento (DD/MM/AAAA) :",
-        validar_data_nascimento
+        VALIDACOES_CLIENTE["data_nascimento"]
     )
-    # res_data e um dicionario { "data": ..., "idade": ... }
     data_nasc = res_data["data"]
     idade     = res_data["idade"]
 
     print(f"\n  {CINZA}Generos aceites: M | F | OUTRO  (ou: Masculino, Feminino, etc.){RESET}")
     genero = _pedir_validado(
         "Genero                          :",
-        validar_genero
+        VALIDACOES_CLIENTE["genero"]
     )
 
     nacionalidade = _pedir_validado(
         "Nacionalidade                   :",
-        validar_nacionalidade
+        VALIDACOES_CLIENTE["nacionalidade"]
     )
 
     print(f"\n  {CINZA}Exemplo: 912345678  ou  jose@email.com  ou  912345678 / jose@email.com{RESET}")
     contacto = _pedir_validado(
         "Contacto                        :",
-        validar_contacto
+        VALIDACOES_CLIENTE["contacto"]
     )
 
     saldo = _pedir_validado(
         "Saldo inicial (EUR)             :",
-        validar_saldo
+        VALIDACOES_CLIENTE["saldo"]
     )
 
     print(f"\n  {CINZA}Niveis: {' | '.join(NIVEIS_VALIDOS)}{RESET}")
     nivel = _pedir_validado(
         "Nivel                           :",
-        validar_nivel
+        VALIDACOES_CLIENTE["nivel"]
     )
 
     print(f"\n  {CINZA}Estados: {' | '.join(ESTADOS_VALIDOS)}{RESET}")
     estado = _pedir_validado(
         "Estado                          :",
-        validar_estado
+        VALIDACOES_CLIENTE["estado"]
     )
 
     c = criar_cliente(nome, data_nasc, genero, nacionalidade,
@@ -380,44 +389,24 @@ def editar_cliente():
         ("estado",           c["estado"]),
     ]
     for i, par in enumerate(campos_vals, 1):
-        campo_nome = par[0]
-        campo_val  = par[1]
-        print(f"  {OURO}[{i}]{RESET} {CINZA}{campo_nome:<20}{RESET}  {BRANCO}{campo_val}{RESET}")
+        print(f"  {OURO}[{i}]{RESET} {CINZA}{par[0]:<20}{RESET}  {BRANCO}{par[1]}{RESET}")
 
     linha("-", CINZA)
     campo = pedir("Campo a editar (escreve o nome) :").lower().strip()
 
-    # Tuplo dos campos validos de cliente
-    campos_validos = (
-        "nome", "data_nascimento", "genero", "nacionalidade",
-        "contacto", "saldo", "nivel", "estado"
-    )
-
-    if campo not in campos_validos:
+    if campo not in CAMPOS_EDITAVEIS_CLIENTE:
         print()
         print(f"  {VERMELHO}✖  Campo desconhecido: \"{campo}\".{RESET}")
-        print(f"  {AMARELO}   Campos validos: {' | '.join(campos_validos)}{RESET}")
+        print(f"  {AMARELO}   Campos validos: {' | '.join(CAMPOS_EDITAVEIS_CLIENTE)}{RESET}")
         pausa()
         return
 
-    # Dicionario de despacho: campo -> funcao de validacao
-    despacho = {
-        "nome"            : validar_nome,
-        "data_nascimento" : validar_data_nascimento,
-        "genero"          : validar_genero,
-        "nacionalidade"   : validar_nacionalidade,
-        "contacto"        : validar_contacto,
-        "saldo"           : validar_saldo,
-        "nivel"           : validar_nivel,
-        "estado"          : validar_estado,
-    }
-
+    # VALIDACOES_CLIENTE vem de cliente.py — a main nao sabe nada de utils
     novo_val = _pedir_validado(
         f"Novo valor para '{campo}'        :",
-        despacho[campo]
+        VALIDACOES_CLIENTE[campo]
     )
 
-    # data_nascimento devolve dicionario { "data": ..., "idade": ... }
     if campo == "data_nascimento":
         atualizar_cliente(id_c, campo, novo_val["data"])
     else:
@@ -454,7 +443,7 @@ def remover_cliente_menu():
 
 def listar_clientes():
     cabecalho_mini(f"TODOS OS CLIENTES  ({total_clientes()})", AZUL)
-    todos = listar_todos_clientes()    # lista de dicionarios
+    todos = listar_todos_clientes()
     if not todos:
         print(f"\n{CINZA}  Nenhum cliente registado ainda.{RESET}\n")
         pausa()
@@ -515,42 +504,43 @@ def criar_jogo_menu():
     print(f"\n  {CINZA}Preencha os dados do novo jogo:{RESET}")
     print(f"  {CINZA}(Cada campo e validado — sera avisado se algo estiver errado){RESET}\n")
 
+    # Usar VALIDACOES_JOGO e VALIDACOES_TIPOS_JOGO vindos de jogo.py
     nome = _pedir_validado(
         "Nome do jogo                        :",
-        validar_nome_jogo
+        VALIDACOES_JOGO["nome"]
     )
 
     custo_min = _pedir_validado(
         "Custo minimo de entrada (EUR)       :",
-        validar_custo_minimo
+        VALIDACOES_JOGO["custo_minimo"]
     )
 
     saldo_j = _pedir_validado(
         "Saldo inicial da banca (EUR)        :",
-        validar_saldo_jogo
+        VALIDACOES_JOGO["saldo_jogo"]
     )
 
     print(f"\n  {CINZA}Pode ser positivo (ganho) ou negativo (perda). Ex: 2.0 ou -0.5{RESET}")
     retorno = _pedir_validado(
         "Retorno financeiro                  :",
-        validar_retorno
+        VALIDACOES_JOGO["retorno"]
     )
 
     print(f"\n  {CINZA}Niveis: {' | '.join(NIVEIS_JOGO)}{RESET}")
     nivel_ac = _pedir_validado(
         "Nivel minimo de acesso              :",
-        lambda v: validar_nivel(v, "Nivel de acesso")
+        VALIDACOES_JOGO["nivel_acesso"]
     )
 
     print(f"\n  {CINZA}Estados: {' | '.join(ESTADOS_JOGO)}{RESET}")
     estado = _pedir_validado(
         "Estado                              :",
-        validar_estado
+        VALIDACOES_JOGO["estado"]
     )
 
     print(f"\n  {CINZA}Caracteristicas do jogo — responda com SIM ou NAO:{RESET}")
 
-    # Lista de tuplos (prompt, campo) para iterar os tipos
+    # Lista de tuplos (prompt, chave_no_dicionario) para iterar os tipos
     tipos_prompts = [
         ("Tem dealer?                         :", "dealer"),
         ("Tem tabuleiro?                      :", "tabuleiro"),
@@ -560,18 +550,12 @@ def criar_jogo_menu():
         ("E uma maquina (slot)?               :", "maquina"),
     ]
 
-    # Lista para acumular as respostas na ordem certa
+    # Lista para acumular respostas na ordem certa
     respostas_tipos = []
     for par in tipos_prompts:
-        prompt_txt = par[0]
-        campo_txt  = par[1]
-        r = _pedir_validado(
-            prompt_txt,
-            lambda v, c=campo_txt: validar_sim_nao(v, c)
-        )
+        r = _pedir_validado(par[0], VALIDACOES_TIPOS_JOGO[par[1]])
         respostas_tipos.append(r)
 
-    # Desempacotar lista na ordem: dealer, tabuleiro, pecas, cartas, dados, maquina
     j = criar_jogo(
         nome, custo_min, saldo_j, retorno, nivel_ac, estado,
         respostas_tipos[0], respostas_tipos[1], respostas_tipos[2],
@@ -621,44 +605,23 @@ def editar_jogo_menu():
         ("maquina",      j["tipos"]["maquina"]),
     ]
     for i, par in enumerate(campos_vals, 1):
-        campo_nome = par[0]
-        campo_val  = par[1]
-        print(f"  {OURO}[{i:>2}]{RESET} {CINZA}{campo_nome:<16}{RESET}  {BRANCO}{campo_val}{RESET}")
+        print(f"  {OURO}[{i:>2}]{RESET} {CINZA}{par[0]:<16}{RESET}  {BRANCO}{par[1]}{RESET}")
 
     linha("-", CINZA)
     campo = pedir("Campo a editar (escreve o nome) :").lower().strip()
 
-    # Tuplo dos campos validos de jogo
-    campos_validos = (
-        "nome", "custo_minimo", "saldo_jogo", "retorno",
-        "nivel_acesso", "estado",
-        "dealer", "tabuleiro", "pecas", "cartas", "dados", "maquina"
-    )
-
-    if campo not in campos_validos:
+    if campo not in CAMPOS_EDITAVEIS_JOGO:
         print()
         print(f"  {VERMELHO}✖  Campo desconhecido: \"{campo}\".{RESET}")
-        print(f"  {AMARELO}   Campos validos: {' | '.join(campos_validos)}{RESET}")
+        print(f"  {AMARELO}   Campos validos: {' | '.join(CAMPOS_EDITAVEIS_JOGO)}{RESET}")
         pausa()
         return
 
-    # Set dos campos de tipo SIM/NAO
-    campos_sn = {"dealer", "tabuleiro", "pecas", "cartas", "dados", "maquina"}
-
-    # Dicionario de despacho para campos nao-SN
-    despacho = {
-        "nome"         : validar_nome_jogo,
-        "custo_minimo" : validar_custo_minimo,
-        "saldo_jogo"   : validar_saldo_jogo,
-        "retorno"      : validar_retorno,
-        "nivel_acesso" : lambda v: validar_nivel(v, "Nivel de acesso"),
-        "estado"       : validar_estado,
-    }
-
-    if campo in campos_sn:
-        fn = lambda v, c=campo: validar_sim_nao(v, c)
+    # Escolher funcao de validacao pelo dicionario de despacho — tudo vem de jogo.py
+    if campo in CAMPOS_TIPOS:
+        fn = VALIDACOES_TIPOS_JOGO[campo]
     else:
-        fn = despacho[campo]
+        fn = VALIDACOES_JOGO[campo]
 
     novo_val = _pedir_validado(
         f"Novo valor para '{campo}'        :",
@@ -697,7 +660,7 @@ def remover_jogo_menu():
 
 def listar_jogos():
     cabecalho_mini(f"TODOS OS JOGOS  ({total_jogos()})", ROXO)
-    todos = listar_todos_jogos()       # lista de dicionarios
+    todos = listar_todos_jogos()
     if not todos:
         print(f"\n{CINZA}  Nenhum jogo registado ainda.{RESET}\n")
         pausa()
@@ -746,7 +709,6 @@ def ficha_jogo():
     print(f"  {CINZA}Saldo da Banca : {VERDE}EUR {j['saldo_jogo']:.2f}{RESET}")
     print(f"  {CINZA}Retorno        : {ret_cor}{j['retorno']:.2f}x{RESET}")
     linha("-", CINZA)
-    # Aceder ao sub-dicionario "tipos" pelo nome da chave
     t = j["tipos"]
     print(f"  {CINZA}Dealer         : {sim_nao_cor(t['dealer'])}")
     print(f"  {CINZA}Tabuleiro      : {sim_nao_cor(t['tabuleiro'])}")

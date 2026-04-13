@@ -2,9 +2,27 @@
 #  FICHEIRO 2 — jogo.py
 #  CRUD de jogos usando dicionarios de dicionarios
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
+#  As validacoes de jogo vivem aqui (importadas de utils)
 # ══════════════════════════════════════════════════════════════
 
 from datetime import date
+from utils import (
+    validar_nome_jogo,
+    validar_custo_minimo,
+    validar_saldo_jogo,
+    validar_retorno,
+    validar_nivel,
+    validar_estado,
+    validar_sim_nao,
+)
+
+# ── Re-exportar para que a main possa importar tudo de jogo ──
+# A main nao precisa de saber que as utils existem
+validar_nome_jogo_pub    = validar_nome_jogo
+validar_custo_minimo_pub = validar_custo_minimo
+validar_saldo_jogo_pub   = validar_saldo_jogo
+validar_retorno_pub      = validar_retorno
+validar_sim_nao_pub      = validar_sim_nao
 
 # Tuplos de valores validos (imutaveis)
 ESTADOS_JOGO = ("ATIVO", "INATIVO")
@@ -15,6 +33,30 @@ base_jogos = {}
 
 # Lista usada como pilha para controlo do contador de IDs
 pilha_ids_jogo = [1]
+
+# Set dos campos que sao tipos (sub-dicionario "tipos")
+CAMPOS_TIPOS = {"dealer", "tabuleiro", "pecas", "cartas", "dados", "maquina"}
+
+# Dicionario de despacho de validacao — campo -> funcao
+# Exportado para a main usar directamente sem importar utils
+VALIDACOES_JOGO = {
+    "nome"         : validar_nome_jogo,
+    "custo_minimo" : validar_custo_minimo,
+    "saldo_jogo"   : validar_saldo_jogo,
+    "retorno"      : validar_retorno,
+    "nivel_acesso" : lambda v: validar_nivel(v, "Nivel de acesso"),
+    "estado"       : validar_estado,
+}
+
+# Dicionario de despacho para campos SIM/NAO
+VALIDACOES_TIPOS_JOGO = {
+    "dealer"    : lambda v: validar_sim_nao(v, "dealer"),
+    "tabuleiro" : lambda v: validar_sim_nao(v, "tabuleiro"),
+    "pecas"     : lambda v: validar_sim_nao(v, "pecas"),
+    "cartas"    : lambda v: validar_sim_nao(v, "cartas"),
+    "dados"     : lambda v: validar_sim_nao(v, "dados"),
+    "maquina"   : lambda v: validar_sim_nao(v, "maquina"),
+}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -70,16 +112,13 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
         }
     }
     """
-    # Gerar ID usando a pilha de contador
     id_jogo = f"JOG{pilha_ids_jogo[0]:04d}"
     pilha_ids_jogo[0] += 1
 
-    # Validar nivel contra tuplo
     nivel_upper = str(nivel_acesso).strip().upper()
     if nivel_upper not in NIVEIS_JOGO:
         nivel_upper = "BRONZE"
 
-    # Validar estado contra tuplo
     estado_upper = str(estado).strip().upper()
     if estado_upper not in ESTADOS_JOGO:
         estado_upper = "ATIVO"
@@ -104,7 +143,6 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
         "maquina"   : _sn(tem_maquina),
     }
 
-    # Dicionario do jogo com todos os campos
     jogo = {
         "id"           : id_jogo,
         "nome"         : _title(str(nome).strip()),
@@ -116,7 +154,6 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
         "data_criacao" : f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}",
         "tipos"        : tipos,
     }
-    # Guardar no dicionario principal usando o ID como chave
     base_jogos[id_jogo] = jogo
     return jogo
 
@@ -142,7 +179,6 @@ def listar_todos_jogos():
 
 
 def listar_jogos_ativos():
-    # Filtrar usando lista por compreensao
     return [j for j in base_jogos.values() if j["estado"] == "ATIVO"]
 
 
@@ -160,9 +196,6 @@ CAMPOS_EDITAVEIS_JOGO = (
     "nivel_acesso", "estado",
     "dealer", "tabuleiro", "pecas", "cartas", "dados", "maquina"
 )
-
-# Set dos campos que sao tipos (sub-dicionario "tipos")
-CAMPOS_TIPOS = {"dealer", "tabuleiro", "pecas", "cartas", "dados", "maquina"}
 
 def atualizar_jogo(id_jogo, campo, valor):
     j = ler_jogo_por_id(id_jogo)
@@ -205,7 +238,6 @@ def atualizar_jogo(id_jogo, campo, valor):
         j["estado"] = v
 
     elif campo in CAMPOS_TIPOS:
-        # Aceder ao sub-dicionario "tipos" pelo campo
         j["tipos"][campo] = _sn(valor)
 
 

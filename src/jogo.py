@@ -57,23 +57,7 @@ VALIDACOES_TIPOS_JOGO = {
 
 # ── Resultado de operacao CRUD ────────────────────────────────
 
-def _resposta(code, dados=None, mensagem=""):
-    codigos = {
-        200: "200 OK",
-        201: "201 Created",
-        204: "204 No Content",
-        400: "400 Bad Request",
-        404: "404 Not Found",
-        409: "409 Conflict",
-        422: "422 Unprocessable Entity",
-        500: "500 Internal Server Error",
-    }
-    return {
-        "status"  : code,
-        "ok"      : codigos.get(code, str(code)),
-        "dados"   : dados,
-        "mensagem": mensagem,
-    }
+
 
 
 # ── Auxiliar interno ──────────────────────────────────────────
@@ -104,11 +88,11 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
 
         custo = float(custo_minimo)
         if custo < 0:
-            return _resposta(422, mensagem="Custo minimo nao pode ser negativo.")
+            return 422,"Custo minimo nao pode ser negativo."
 
         saldo = float(saldo_jogo)
         if saldo < 0:
-            return _resposta(422, mensagem="Saldo do jogo nao pode ser negativo.")
+            return 422,"Saldo do jogo nao pode ser negativo."
 
         hoje = date.today()
         tipos = {
@@ -132,9 +116,9 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
             "tipos"        : tipos,
         }
         base_jogos[id_jogo] = jogo
-        return _resposta(201, dados=jogo, mensagem=f"Jogo '{id_jogo}' criado com sucesso.")
+        return 201,"criado com sucesso."
     except Exception as e:
-        return _resposta(500, mensagem=str(e))
+        return 500,"Error"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -144,22 +128,22 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
 def ler_jogo_por_id(id_jogo):
     j = base_jogos.get(str(id_jogo).upper())
     if not j:
-        return _resposta(404, mensagem=f"Jogo '{id_jogo}' nao encontrado.")
-    return _resposta(200, dados=j)
+        return 404,"ID nao encontrado."
+    return 200, j
 
 def ler_jogo_por_nome(nome):
     for j in base_jogos.values():
         if j["nome"].lower() == str(nome).strip().lower():
-            return _resposta(200, dados=j)
-    return _resposta(404, mensagem=f"Jogo '{nome}' nao encontrado.")
+            return 200, j
+    return 404,f"Jogo '{nome}' nao encontrado."
 
 def listar_todos_jogos():
     lista = list(base_jogos.values())
-    return _resposta(200, dados=lista, mensagem=f"{len(lista)} jogo(s) encontrado(s).")
+    return 200,f"{len(lista)} jogo(s) encontrado(s)."
 
 def listar_jogos_ativos():
     lista = [j for j in base_jogos.values() if j["estado"] == "ATIVO"]
-    return _resposta(200, dados=lista, mensagem=f"{len(lista)} jogo(s) activo(s).")
+    return 200,f"{len(lista)} jogo(s) activo(s)."
 
 def total_jogos():
     return len(base_jogos)
@@ -172,28 +156,28 @@ def total_jogos():
 def atualizar_jogo(id_jogo, campo, valor):
     j = base_jogos.get(str(id_jogo).upper())
     if not j:
-        return _resposta(404, mensagem=f"Jogo '{id_jogo}' nao encontrado.")
+        return 404,f"Jogo '{id_jogo}' nao encontrado."
 
     campo = campo.lower().strip()
     if campo not in CAMPOS_EDITAVEIS_JOGO:
-        return _resposta(400, mensagem=f"Campo '{campo}' invalido. Editaveis: {' | '.join(CAMPOS_EDITAVEIS_JOGO)}")
+        return 400,f"Campo '{campo}' invalido. Editaveis: {' | '.join(CAMPOS_EDITAVEIS_JOGO)}"
 
     try:
         if campo == "nome":
             if not str(valor).strip():
-                return _resposta(400, mensagem="Nome nao pode estar vazio.")
+                return 400,"Nome nao pode estar vazio."
             j["nome"] = str(valor).strip()
 
         elif campo == "custo_minimo":
             v = float(valor)
             if v < 0:
-                return _resposta(422, mensagem="Custo minimo nao pode ser negativo.")
+                return 422,"Custo minimo nao pode ser negativo."
             j["custo_minimo"] = v
 
         elif campo == "saldo_jogo":
             v = float(valor)
             if v < 0:
-                return _resposta(422, mensagem="Saldo nao pode ser negativo.")
+                return 422,"Saldo nao pode ser negativo."
             j["saldo_jogo"] = v
 
         elif campo == "retorno":
@@ -202,21 +186,21 @@ def atualizar_jogo(id_jogo, campo, valor):
         elif campo == "nivel_acesso":
             v = str(valor).strip().upper()
             if v not in NIVEIS_JOGO:
-                return _resposta(422, mensagem=f"Nivel invalido. Validos: {' | '.join(NIVEIS_JOGO)}")
+                return 422,f"Nivel invalido. Validos: {' | '.join(NIVEIS_JOGO)}"
             j["nivel_acesso"] = v
 
         elif campo == "estado":
             v = str(valor).strip().upper()
             if v not in ESTADOS_JOGO:
-                return _resposta(422, mensagem=f"Estado invalido. Validos: {' | '.join(ESTADOS_JOGO)}")
+                return 422,f"Estado invalido. Validos: {' | '.join(ESTADOS_JOGO)}"
             j["estado"] = v
 
         elif campo in CAMPOS_TIPOS:
             j["tipos"][campo] = _sn(valor)
 
-        return _resposta(200, dados=j, mensagem=f"Campo '{campo}' actualizado com sucesso.")
+        return 200,f"Campo '{campo}' actualizado com sucesso."
     except Exception as e:
-        return _resposta(500, mensagem=str(e))
+        return 500,str(e)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -225,6 +209,6 @@ def atualizar_jogo(id_jogo, campo, valor):
 
 def remover_jogo(id_jogo):
     if id_jogo not in base_jogos:
-        return _resposta(404, mensagem=f"Jogo '{id_jogo}' nao encontrado.")
+        return 404,f"Jogo '{id_jogo}' nao encontrado."
     j = base_jogos.pop(id_jogo)
-    return _resposta(200, dados=j, mensagem=f"Jogo '{j['nome']}' removido com sucesso.")
+    return 200,f"Jogo '{j['nome']}' removido com sucesso."

@@ -67,7 +67,7 @@ def main():
             estado        = input("Estado (ATIVO/INATIVO): ")
             rc = criar_cliente(nome, data_nasc, genero, nacionalidade,
                                contacto, saldo, nivel, estado)
-            if rc["status"] == 200:
+            if rc["status"] == ativo:
                 print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
                 print(rc["dados"])
             else:

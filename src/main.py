@@ -65,13 +65,13 @@ def main():
             saldo         = input("Saldo inicial (EUR): ")
             nivel         = input("Nivel (BRONZE/PRATA/OURO/PLATINA/VIP): ")
             estado        = input("Estado (ATIVO/INATIVO): ")
-            rc = criar_cliente(nome, data_nasc, genero, nacionalidade,
+            code, obj = criar_cliente(nome, data_nasc, genero, nacionalidade,
                                contacto, saldo, nivel, estado)
-            if rc["status"] == ativo:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
-                print(rc["dados"])
+            if code == 201:
+                print("Cliente criado comsucesso")
+                print(obj)
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print("Erro:" + obj)
 
         elif opcao == "2":
             rc = listar_todos_clientes()

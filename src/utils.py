@@ -54,6 +54,7 @@ def _tem_digito(texto):
 
 def _todos_chars_validos(texto, chars_validos):
     return all(c in chars_validos for c in texto)
+
 def _e_email_valido(texto):
     partes = texto.split("@")
     if len(partes) != 2:

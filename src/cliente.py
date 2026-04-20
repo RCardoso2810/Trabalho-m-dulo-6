@@ -46,7 +46,6 @@ VALIDACOES_CLIENTE = {
 }
 
 
-
 # ══════════════════════════════════════════════════════════════
 #  CREATE — 201 Created
 # ══════════════════════════════════════════════════════════════
@@ -54,42 +53,65 @@ VALIDACOES_CLIENTE = {
 def criar_cliente(nome, data_nasc, genero, nacionalidade,
                   contacto, saldo, nivel, estado="ATIVO"):
     try:
+        # ── Validacoes via dicionario de despacho ─────────────
+        rv = validar_nome(nome)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+
+        rv = validar_data_nascimento(data_nasc)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+
+        rv = validar_genero(genero)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+        genero_ok = rv["valor"]
+
+        rv = validar_nacionalidade(nacionalidade)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+
+        rv = validar_contacto(contacto)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+
+        rv = validar_saldo(saldo)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+        saldo_ok = rv["valor"]
+
+        rv = validar_nivel(nivel)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+        nivel_ok = rv["valor"]
+
+        rv = validar_estado(estado)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+        estado_ok = rv["valor"]
+
+        # ── Construcao do registo ─────────────────────────────
         id_cliente = f"CLI{pilha_ids_cliente[0]:04d}"
         pilha_ids_cliente[0] += 1
-
-        genero_upper = str(genero).strip().upper()
-        if genero_upper not in GENEROS_VALIDOS:
-            genero_upper = "OUTRO"
-
-        nivel_upper = str(nivel).strip().upper()
-        if nivel_upper not in NIVEIS_VALIDOS:
-            nivel_upper = "BRONZE"
-
-        estado_upper = str(estado).strip().upper()
-        if estado_upper not in ESTADOS_VALIDOS:
-            estado_upper = "ATIVO"
-
-        if float(saldo) < 0:
-            return 422, "Saldo nao pode ser negativo."
 
         hoje = date.today()
         cliente = {
             "id"             : id_cliente,
             "nome"           : str(nome).strip(),
             "data_nascimento": str(data_nasc).strip(),
-            "genero"         : genero_upper,
+            "genero"         : genero_ok,
             "nacionalidade"  : str(nacionalidade).strip(),
             "contacto"       : str(contacto).strip(),
             "data_registo"   : f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}",
-            "saldo"          : float(saldo),
-            "nivel"          : nivel_upper,
-            "estado"         : estado_upper,
+            "saldo"          : saldo_ok,
+            "nivel"          : nivel_ok,
+            "estado"         : estado_ok,
         }
         base_clientes[id_cliente] = cliente
-
         return 201, cliente
+
     except Exception as e:
-        return 500, "Error"
+        return 500, f"Erro interno: {e}"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -99,18 +121,18 @@ def criar_cliente(nome, data_nasc, genero, nacionalidade,
 def ler_cliente_por_id(id_cliente):
     c = base_clientes.get(str(id_cliente).upper())
     if not c:
-        return 404, "Não encontrado"
+        return 404, "Cliente nao encontrado."
     return 200, c
 
 def ler_cliente_por_nome(nome):
     for c in base_clientes.values():
         if c["nome"].lower() == str(nome).strip().lower():
             return 200, c
-    return 404, "Não encontrado"
+    return 404, f"Cliente '{nome}' nao encontrado."
 
 def listar_todos_clientes():
     lista = list(base_clientes.values())
-    return 200, "Cliente(s) encontrado(s)"
+    return 200, lista
 
 def total_clientes():
     return len(base_clientes)
@@ -123,52 +145,21 @@ def total_clientes():
 def atualizar_cliente(id_cliente, campo, valor):
     c = base_clientes.get(str(id_cliente).upper())
     if not c:
-        return 404,"Não encontrado"
+        return 404, "Cliente nao encontrado."
 
     campo = campo.lower().strip()
     if campo not in CAMPOS_EDITAVEIS_CLIENTE:
-        return 400, "Não foi encontrado nenhum campo com esse nome"
+        return 400, f"Campo '{campo}' invalido. Editaveis: {' | '.join(CAMPOS_EDITAVEIS_CLIENTE)}"
 
-    try:
-        if campo == "nome":
-            if not str(valor).strip():
-                return 400,"Nome não pode estar vazio"
-            c["nome"] = str(valor).strip()
+    # ── Validacao via dicionario de despacho ──────────────────
+    if campo in VALIDACOES_CLIENTE:
+        rv = VALIDACOES_CLIENTE[campo](valor)
+        if not rv["valido"]:
+            return 422, rv["mensagem"]
+        c[campo] = rv["valor"]
+        return 200, f"Campo '{campo}' actualizado com sucesso."
 
-        elif campo == "data_nascimento":
-            c["data_nascimento"] = str(valor).strip()
-
-        elif campo == "genero":
-            v = str(valor).strip().upper()
-            c["genero"] = v if v in GENEROS_VALIDOS else "OUTRO"
-
-        elif campo == "nacionalidade":
-            c["nacionalidade"] = str(valor).strip()
-
-        elif campo == "contacto":
-            c["contacto"] = str(valor).strip()
-
-        elif campo == "saldo":
-            v = float(valor)
-            if v < 0:
-                return 422,"Saldo não pode ser negativo"
-            c["saldo"] = v
-
-        elif campo == "nivel":
-            v = str(valor).strip().upper()
-            if v not in NIVEIS_VALIDOS:
-                return 422,"Nivel não encotrado"
-            c["nivel"] = v
-
-        elif campo == "estado":
-            v = str(valor).strip().upper()
-            if v not in ESTADOS_VALIDOS:
-                return 422,"Estado inválido"
-            c["estado"] = v
-
-        return 200,"Atualizado com sucesso"
-    except Exception as e:
-        return 500,"error"
+    return 400, f"Campo '{campo}' nao pode ser editado."
 
 
 # ══════════════════════════════════════════════════════════════
@@ -176,7 +167,8 @@ def atualizar_cliente(id_cliente, campo, valor):
 # ══════════════════════════════════════════════════════════════
 
 def remover_cliente(id_cliente):
-    if id_cliente not in base_clientes:
-        return 404,"Não encontrado"
-    c = base_clientes.pop(id_cliente)
-    return 200,"Eliminado com sucesso"
+    id_upper = str(id_cliente).upper()
+    if id_upper not in base_clientes:
+        return 404, f"Cliente '{id_cliente}' nao encontrado."
+    c = base_clientes.pop(id_upper)
+    return 200, f"Cliente '{c['nome']}' removido com sucesso."

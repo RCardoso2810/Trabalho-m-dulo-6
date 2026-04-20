@@ -25,7 +25,7 @@ from jogo import (
 
 
 # ══════════════════════════════════════════════════════════════
-#  MENUS
+#  MENU
 # ══════════════════════════════════════════════════════════════
 
 def menu():
@@ -66,109 +66,109 @@ def main():
             nivel         = input("Nivel (BRONZE/PRATA/OURO/PLATINA/VIP): ")
             estado        = input("Estado (ATIVO/INATIVO): ")
             code, obj = criar_cliente(nome, data_nasc, genero, nacionalidade,
-                               contacto, saldo, nivel, estado)
+                                      contacto, saldo, nivel, estado)
             if code == 201:
-                print("Cliente criado comsucesso")
+                print(f"[{code}] Cliente criado com sucesso.")
                 print(obj)
             else:
-                print("Erro:" + obj)
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "2":
-            rc = listar_todos_clientes()
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
-                for c in rc["dados"]:
+            code, obj = listar_todos_clientes()
+            if code == 200:
+                print(f"[{code}] {len(obj)} cliente(s) encontrado(s).")
+                for c in obj:
                     print(c)
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "3":
             id_c = input("ID do cliente: ")
-            rc = ler_cliente_por_id(id_c)
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
-                print(rc["dados"])
+            code, obj = ler_cliente_por_id(id_c)
+            if code == 200:
+                print(f"[{code}] Cliente encontrado.")
+                print(obj)
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "4":
             id_c  = input("ID do cliente: ")
             print(f"Campos editaveis: {' | '.join(CAMPOS_EDITAVEIS_CLIENTE)}")
             campo = input("Campo a editar: ")
             valor = input("Novo valor: ")
-            rc = atualizar_cliente(id_c, campo, valor)
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+            code, obj = atualizar_cliente(id_c, campo, valor)
+            if code == 200:
+                print(f"[{code}] {obj}")
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "5":
             id_c = input("ID do cliente: ")
-            rc = remover_cliente(id_c)
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+            code, obj = remover_cliente(id_c)
+            if code == 200:
+                print(f"[{code}] {obj}")
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         # ── JOGOS ─────────────────────────────────────────────
 
         elif opcao == "6":
-            nome       = input("Nome do jogo: ")
-            custo_min  = input("Custo minimo (EUR): ")
-            saldo_j    = input("Saldo da banca (EUR): ")
-            retorno    = input("Retorno (ex: 35 ou -0.5): ")
-            nivel_ac   = input("Nivel acesso (BRONZE/PRATA/OURO/PLATINA/VIP): ")
-            estado     = input("Estado (ATIVO/INATIVO): ")
-            dealer     = input("Tem dealer? (SIM/NAO): ")
-            tabuleiro  = input("Tem tabuleiro? (SIM/NAO): ")
-            pecas      = input("Tem pecas? (SIM/NAO): ")
-            cartas     = input("Tem cartas? (SIM/NAO): ")
-            dados      = input("Tem dados? (SIM/NAO): ")
-            maquina    = input("E uma maquina/slot? (SIM/NAO): ")
-            rc = criar_jogo(nome, custo_min, saldo_j, retorno, nivel_ac, estado,
-                            dealer, tabuleiro, pecas, cartas, dados, maquina)
-            if rc["status"] == 201:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
-                print(rc["dados"])
+            nome      = input("Nome do jogo: ")
+            custo_min = input("Custo minimo (EUR): ")
+            saldo_j   = input("Saldo da banca (EUR): ")
+            retorno   = input("Retorno (ex: 35 ou -0.5): ")
+            nivel_ac  = input("Nivel acesso (BRONZE/PRATA/OURO/PLATINA/VIP): ")
+            estado    = input("Estado (ATIVO/INATIVO): ")
+            dealer    = input("Tem dealer? (SIM/NAO): ")
+            tabuleiro = input("Tem tabuleiro? (SIM/NAO): ")
+            pecas     = input("Tem pecas? (SIM/NAO): ")
+            cartas    = input("Tem cartas? (SIM/NAO): ")
+            dados     = input("Tem dados? (SIM/NAO): ")
+            maquina   = input("E uma maquina/slot? (SIM/NAO): ")
+            code, obj = criar_jogo(nome, custo_min, saldo_j, retorno, nivel_ac, estado,
+                                   dealer, tabuleiro, pecas, cartas, dados, maquina)
+            if code == 201:
+                print(f"[{code}] Jogo criado com sucesso.")
+                print(obj)
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "7":
-            rc = listar_todos_jogos()
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
-                for j in rc["dados"]:
+            code, obj = listar_todos_jogos()
+            if code == 200:
+                print(f"[{code}] {len(obj)} jogo(s) encontrado(s).")
+                for j in obj:
                     print(j)
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "8":
             id_j = input("ID do jogo: ")
-            rc = ler_jogo_por_id(id_j)
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
-                print(rc["dados"])
+            code, obj = ler_jogo_por_id(id_j)
+            if code == 200:
+                print(f"[{code}] Jogo encontrado.")
+                print(obj)
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "9":
             id_j  = input("ID do jogo: ")
             print(f"Campos editaveis: {' | '.join(CAMPOS_EDITAVEIS_JOGO)}")
             campo = input("Campo a editar: ")
             valor = input("Novo valor: ")
-            rc = atualizar_jogo(id_j, campo, valor)
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+            code, obj = atualizar_jogo(id_j, campo, valor)
+            if code == 200:
+                print(f"[{code}] {obj}")
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "10":
             id_j = input("ID do jogo: ")
-            rc = remover_jogo(id_j)
-            if rc["status"] == 200:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+            code, obj = remover_jogo(id_j)
+            if code == 200:
+                print(f"[{code}] {obj}")
             else:
-                print(f"[{rc['status']}] {rc['ok']} - {rc['mensagem']}")
+                print(f"[{code}] Erro: {obj}")
 
         elif opcao == "0":
             print("A sair...")

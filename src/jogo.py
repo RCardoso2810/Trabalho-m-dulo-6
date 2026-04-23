@@ -180,14 +180,14 @@ def atualizar_jogo(id_jogo, campo, valor):
         if not rv["valido"]:
             return 422, rv["mensagem"]
         j[campo] = rv["valor"]
-        return 200, f"Campo '{campo}' actualizado com sucesso."
+        return 200, j
 
     if campo in CAMPOS_TIPOS:
         rv = VALIDACOES_TIPOS_JOGO[campo](valor)
         if not rv["valido"]:
             return 422, rv["mensagem"]
         j["tipos"][campo] = rv["valor"]
-        return 200, f"Campo '{campo}' actualizado com sucesso."
+        return 200, j
 
     return 400, f"Campo '{campo}' nao pode ser editado."
 

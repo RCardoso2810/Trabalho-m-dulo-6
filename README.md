@@ -1,45 +1,51 @@
-# PROJETO: SISTEMA DE GESTÃO DE CASSINO
-# DOCUMENTAÇÃO TÉCNICA EM FORMATO PYTHON STRING
-
 readme_projeto = """
-ESTRUTURA DA ARQUITETURA LÓGICA E MODELO DE DADOS
+ESTRUTURA DA ARQUITETURA LÓGICA E MODELO DE DADOS (VERSÃO INTEGRADA)
 
 🏗️ MODELAGEM DAS ENTIDADES
-O sistema está estruturado em dois pilares fundamentais: Cliente e Jogo.
+O sistema baseia-se num ecossistema onde o Casino gere o espaço, o Cliente fornece a liquidez, o Jogo gera o entretenimento e a Transação garante a integridade financeira.
+
+🏛️ ENTIDADE: CASINO (ESTABELECIMENTO)
+O "Contentor Master" que detém a licença e as regras globais.
+- Atributos: Nome, ID, Localização, Taxa(Imposto), Moeda, Capacidade Máxima.
+- Listas: Jogos, Funcionários, Clientes (presentes no edifício) e Salas.
 
 👤 ENTIDADE: CLIENTE (USUÁRIO)
-A entidade Cliente é o centro da operação. Além dos dados demográficos, 
-o sistema gere o estado financeiro e a reputação (Nível) do usuário.
+- Atributos: Nome, Nº Cliente, Data Nasc, Género, Saldo Atual, Nível (VIP/Standard), Estado.
 
-ATRIBUTO          | DESCRIÇÃO                      | OBSERVAÇÕES
-------------------|--------------------------------|---------------------------
-Identificação     | Nome, Nº de Cliente            | Chave único de registro.
-Demografia        | Data Nasc, Género, Nac.        | Compliance Legal.
-Contacto          | Email / Telemóvel              | Comunicação e Segurança.
-Financeiro        | Saldo Atual                    | Valor para apostas 24/7.
-Fidelização       | Nível (VIP / Padrão)           | Benefícios e Limites.
-Estado            | Ativo / Inativo                | Controlo de acesso.
+🔄 ENTIDADE: TRANSAÇÃO (AUDITORIA E SEGURANÇA)
+Esta é a entidade de controlo. O saldo do cliente nunca deve ser alterado sem um registo correspondente aqui.
+- ID Transação: Identificador único (UUID) para rastreio.
+- Nº Cliente: Chave estrangeira ligada ao autor da movimentação.
+- Tipo: Categoria da operação (Depósito, Levantamento, Aposta, Prémio).
+- Tipo de Movimento: Entrada ou Saída de capital para o cliente.
+- Montante: Valor exato da operação.
+- Método de Pagamento: Dinheiro físico, Cartão, Voucher ou Fichas.
+- Data e Hora: Timestamp preciso para evitar duplicação.
+- Estado: (Pendente / Concluída / Cancelada / Suspeita).
 
 🎮 ENTIDADE: JOGO (GAME INSTANCE)
-Define as regras e os requisitos de entrada para cada modalidade.
+- Atributos: Nome, ID, Custo Mínimo, Tipo (Dealer/Peças/Tabuleiros), Nível de Acesso.
 
-- Categorização Técnica: Com Dealer, Tabuleiros, Peças ou Slots.
-- Controlo de Acesso: Nível de Acesso bloqueia clientes Standard de mesas High Roller.
-- Mecânica de Custo: Custo Mínimo para garantir a cobertura económica da casa.
+📊 TABELAS TÉCNICAS (MODELO DE DADOS)
 
-🔄 LÓGICA DE INTERAÇÃO (WORKFLOW)
-1. VALIDAÇÃO DE ENTRADA: Sistema verifica se o cliente está Ativo e tem Nível compatível.
-2. APOSTA: Retirada de quantia do Saldo validando o Custo Mínimo.
-3. PROCESSAMENTO (RNG): Cálculo baseado em probabilidades:
-   - Lucro (Ganho): Retorno > Gasto.
-   - Break-even (Empate): Retorno = Gasto.
-   - Perda: Retorno < Gasto.
-4. ATUALIZAÇÃO: Saldo atualizado instantaneamente e registado para auditoria.
+| ENTIDADE    | ATRIBUTO CHAVE      | FUNÇÃO NO SISTEMA                          |
+|:------------|:--------------------|:-------------------------------------------|
+| **Casino** | Taxa_Imposto        | Define a margem legal retida pelo estado.  |
+| **Cliente** | Saldo_Atual         | Reflete a liquidez momentânea do jogador.  |
+| **Jogo** | Nivel_Acesso        | Filtra quem pode entrar em certas mesas.   |
+| **Transação**| ID_Transacao        | Garante que o dinheiro não "desaparece".   |
 
-📈 REGRAS DE NEGÓCIO E SEGURANÇA
-- Restrição de Idade: Validação obrigatória da Data de Nascimento.
-- Gestão de Risco: Bloqueio automático por comportamento suspeito (Inativo).
-- Configuração de Retorno: House Edge ajustável pelo administrador.
+🔄 LÓGICA DE INTERAÇÃO (WORKFLOW DE SEGURANÇA)
+
+1. ENTRADA: O Cliente entra no Casino (valida-se Lotação e Data de Nasc).
+2. DEPÓSITO: O Cliente vai à Caixa. Cria-se uma TRANSAÇÃO (Tipo: Depósito, Movimento: Entrada). O Saldo do Cliente é atualizado.
+3. JOGO: O Cliente faz uma aposta. Cria-se uma TRANSAÇÃO (Tipo: Aposta, Movimento: Saída).
+4. RESULTADO:
+   - Se Ganhar: Nova TRANSAÇÃO (Tipo: Prémio, Movimento: Entrada).
+   - Se Perder: O saldo permanece deduzido, o lucro vai para o Balanço do Casino.
+5. AUDITORIA: O administrador pode cruzar a soma de todas as Transações com o Saldo Final do Cliente para validar que não houve fraude.
+
+📈 REGRAS DE NEGÓCIO
+- Integridade: Uma transação, após ser marcada como "Concluída", nunca pode ser eliminada, apenas estornada por uma nova transação de correção.
+- Fiscalidade: O Casino aplica a Taxa(Imposto) sobre o lucro bruto gerado nas transações de "Aposta vs Prémio".
 """
-
-

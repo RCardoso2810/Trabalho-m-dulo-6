@@ -53,7 +53,6 @@ VALIDACOES_CLIENTE = {
 def criar_cliente(nome, data_nasc, genero, nacionalidade,
                   contacto, saldo, nivel, estado="ATIVO"):
     try:
-        # ── Validacoes via dicionario de despacho ─────────────
         rv = validar_nome(nome)
         if not rv["valido"]:
             return 422, rv["mensagem"]
@@ -157,7 +156,7 @@ def atualizar_cliente(id_cliente, campo, valor):
         if not rv["valido"]:
             return 422, rv["mensagem"]
         c[campo] = rv["valor"]
-        return 200, f"Campo '{campo}' actualizado com sucesso."
+        return 200, c  # ← alterado: devolve objeto completo
 
     return 400, f"Campo '{campo}' nao pode ser editado."
 

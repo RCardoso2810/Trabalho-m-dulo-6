@@ -98,7 +98,8 @@ def main():
             valor = input("Novo valor: ")
             code, obj = atualizar_cliente(id_c, campo, valor)
             if code == 200:
-                print(f"[{code}] {obj}")
+                print(f"[{code}] Cliente actualizado com sucesso.")  # ← alterado
+                print(obj)                                           # ← alterado
             else:
                 print(f"[{code}] Erro: {obj}")
 
@@ -158,7 +159,8 @@ def main():
             valor = input("Novo valor: ")
             code, obj = atualizar_jogo(id_j, campo, valor)
             if code == 200:
-                print(f"[{code}] {obj}")
+                print(f"[{code}] Jogo actualizado com sucesso.")  # ← alterado
+                print(obj)                                         # ← alterado
             else:
                 print(f"[{code}] Erro: {obj}")
 

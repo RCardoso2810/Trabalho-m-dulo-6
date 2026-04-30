@@ -138,7 +138,7 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
             "tipos"        : tipos,
         }
         base_jogos[id_jogo] = jogo
-        registar_jogo_casino(id_cas_ok, id_jogo)
+        
         return 201, jogo
 
     except Exception as e:

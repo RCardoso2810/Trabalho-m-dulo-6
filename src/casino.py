@@ -115,25 +115,6 @@ def listar_casinos_disponiveis():
     return [(c["id"], c["nome"]) for c in base_casinos.values()]
 
 
-# ══════════════════════════════════════════════════════════════
-#  REGISTAR CLIENTE / JOGO NO CASINO
-# ══════════════════════════════════════════════════════════════
-
-def registar_cliente_casino(id_casino, id_cliente):
-    c = base_casinos.get(str(id_casino).strip().upper())
-    if not c:
-        return 404, "Casino nao encontrado."
-    c["ids_clientes"].append(id_cliente)
-    c["total_clientes"] += 1
-    return 200, c
-
-def registar_jogo_casino(id_casino, id_jogo):
-    c = base_casinos.get(str(id_casino).strip().upper())
-    if not c:
-        return 404, "Casino nao encontrado."
-    c["ids_jogos"].append(id_jogo)
-    c["total_jogos"] += 1
-    return 200, c
 
 
 # ══════════════════════════════════════════════════════════════
@@ -168,4 +149,4 @@ def remover_casino(id_casino):
     if id_upper not in base_casinos:
         return 404, f"Casino '{id_casino}' nao encontrado."
     c = base_casinos.pop(id_upper)
-    return 200, f"Casino '{c['nome']}' removido com sucesso."
+    return 200, f"Casino '{id_casino}' removido com sucesso."

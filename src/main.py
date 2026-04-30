@@ -3,6 +3,11 @@
 #  Menu terminal — menu principal + sub-menus por modulo
 # ══════════════════════════════════════════════════════════════
 
+from casino import (
+    criar_casino, ler_casino_por_id, listar_todos_casinos,
+    atualizar_casino, remover_casino, listar_casinos_disponiveis,
+    CAMPOS_EDITAVEIS_CASINO,
+)
 from cliente import (
     criar_cliente, ler_cliente_por_id, listar_todos_clientes,
     atualizar_cliente, remover_cliente, CAMPOS_EDITAVEIS_CLIENTE,
@@ -16,11 +21,92 @@ from transacao import (
     listar_transacoes_por_cliente, atualizar_transacao, remover_transacao,
     CAMPOS_EDITAVEIS_TRANSACAO,
 )
-from casino import (
-    criar_casino, ler_casino_por_id, listar_todos_casinos,
-    atualizar_casino, remover_casino, adicionar_item_sala,
-    remover_item_sala, listar_sala, CAMPOS_EDITAVEIS_CASINO,
-)
+
+
+# ── Auxiliar: mostra casinos e pede escolha ───────────────────
+def _pedir_casino():
+    casinos = listar_casinos_disponiveis()
+    if not casinos:
+        print("[404] Nao existe nenhum casino registado. Crie um casino primeiro.")
+        return None
+    print("\nCasinos disponiveis:")
+    for id_c, nome in casinos:
+        print(f"  {id_c} - {nome}")
+    return input("ID do casino: ").strip().upper()
+
+
+# ══════════════════════════════════════════════════════════════
+#  SUB-MENU CASINOS
+# ══════════════════════════════════════════════════════════════
+
+def menu_casinos():
+    while True:
+        print("\n--- CASINOS ---")
+        print("1 - Criar casino")
+        print("2 - Listar casinos")
+        print("3 - Consultar casino")
+        print("4 - Atualizar casino")
+        print("5 - Remover casino")
+        print("0 - Voltar")
+        opcao = input("Escolha: ").strip()
+
+        if opcao == "1":
+            nome  = input("Nome do casino: ")
+            loc   = input("Localizacao: ")
+            taxa  = input("Taxa/imposto (%): ")
+            moeda = input("Moeda (EUR/USD/GBP/CHF/JPY): ")
+            cap   = input("Capacidade maxima: ")
+            code, obj = criar_casino(nome, loc, taxa, moeda, cap)
+            if code == 201:
+                print(f"[{code}] Casino criado com sucesso. ID: {obj['id']}")
+                print(obj)
+            else:
+                print(f"[{code}] Erro: {obj}")
+
+        elif opcao == "2":
+            code, obj = listar_todos_casinos()
+            if code == 200:
+                print(f"[{code}] {len(obj)} casino(s) encontrado(s).")
+                for c in obj:
+                    print(f"  [{c['id']}] {c['nome']} — "
+                          f"Clientes: {c['total_clientes']} | "
+                          f"Jogos: {c['total_jogos']}")
+            else:
+                print(f"[{code}] Erro: {obj}")
+
+        elif opcao == "3":
+            id_cas = input("ID do casino (ex: J01): ")
+            code, obj = ler_casino_por_id(id_cas)
+            if code == 200:
+                print(f"[{code}] Casino encontrado.")
+                print(obj)
+            else:
+                print(f"[{code}] Erro: {obj}")
+
+        elif opcao == "4":
+            id_cas = input("ID do casino: ")
+            print(f"Campos editaveis: {' | '.join(CAMPOS_EDITAVEIS_CASINO)}")
+            campo  = input("Campo a editar: ")
+            valor  = input("Novo valor: ")
+            code, obj = atualizar_casino(id_cas, campo, valor)
+            if code == 200:
+                print(f"[{code}] Casino actualizado com sucesso.")
+                print(obj)
+            else:
+                print(f"[{code}] Erro: {obj}")
+
+        elif opcao == "5":
+            id_cas = input("ID do casino: ")
+            code, obj = remover_casino(id_cas)
+            if code == 200:
+                print(f"[{code}] {obj}")
+            else:
+                print(f"[{code}] Erro: {obj}")
+
+        elif opcao == "0":
+            break
+        else:
+            print("[400] Opcao invalida.")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -39,6 +125,9 @@ def menu_clientes():
         opcao = input("Escolha: ").strip()
 
         if opcao == "1":
+            id_cas = _pedir_casino()
+            if not id_cas:
+                continue
             nome          = input("Nome: ")
             data_nasc     = input("Data nascimento (DD/MM/AAAA): ")
             genero        = input("Genero (M/F/OUTRO): ")
@@ -47,10 +136,10 @@ def menu_clientes():
             saldo         = input("Saldo inicial (EUR): ")
             nivel         = input("Nivel (BRONZE/PRATA/OURO/PLATINA/VIP): ")
             estado        = input("Estado (ATIVO/INATIVO): ")
-            code, obj = criar_cliente(nome, data_nasc, genero, nacionalidade,
-                                      contacto, saldo, nivel, estado)
+            code, obj = criar_cliente(id_cas, nome, data_nasc, genero,
+                                      nacionalidade, contacto, saldo, nivel, estado)
             if code == 201:
-                print(f"[{code}] Cliente criado com sucesso.")
+                print(f"[{code}] Cliente criado com sucesso. ID: {obj['id']}")
                 print(obj)
             else:
                 print(f"[{code}] Erro: {obj}")
@@ -115,6 +204,9 @@ def menu_jogos():
         opcao = input("Escolha: ").strip()
 
         if opcao == "1":
+            id_cas    = _pedir_casino()
+            if not id_cas:
+                continue
             nome      = input("Nome do jogo: ")
             custo_min = input("Custo minimo (EUR): ")
             saldo_j   = input("Saldo da banca (EUR): ")
@@ -127,10 +219,11 @@ def menu_jogos():
             cartas    = input("Tem cartas? (SIM/NAO): ")
             dados     = input("Tem dados? (SIM/NAO): ")
             maquina   = input("E uma maquina/slot? (SIM/NAO): ")
-            code, obj = criar_jogo(nome, custo_min, saldo_j, retorno, nivel_ac, estado,
-                                   dealer, tabuleiro, pecas, cartas, dados, maquina)
+            code, obj = criar_jogo(id_cas, nome, custo_min, saldo_j, retorno,
+                                   nivel_ac, estado, dealer, tabuleiro,
+                                   pecas, cartas, dados, maquina)
             if code == 201:
-                print(f"[{code}] Jogo criado com sucesso.")
+                print(f"[{code}] Jogo criado com sucesso. ID: {obj['id']}")
                 print(obj)
             else:
                 print(f"[{code}] Erro: {obj}")
@@ -196,11 +289,11 @@ def menu_transacoes():
         opcao = input("Escolha: ").strip()
 
         if opcao == "1":
-            id_cli   = input("ID do cliente (ex: CLI0001): ")
+            id_cli   = input("ID do cliente: ")
             tipo     = input("Tipo (ENTRADA/SAIDA): ")
             tipo_mov = input("Tipo de movimento (ENTRADA/SAIDA): ")
             montante = input("Montante (EUR): ")
-            metodo   = input("Metodo de pagamento (DINHEIRO/CARTAO/TRANSFERENCIA/CRYPTO): ")
+            metodo   = input("Metodo (DINHEIRO/CARTAO/TRANSFERENCIA/CRYPTO): ")
             estado   = input("Estado (PENDENTE/CONCLUIDA/CANCELADA): ")
             code, obj = criar_transacao(id_cli, tipo, tipo_mov, montante, metodo, estado)
             if code == 201:
@@ -228,7 +321,7 @@ def menu_transacoes():
                 print(f"[{code}] Erro: {obj}")
 
         elif opcao == "4":
-            id_cli = input("ID do cliente (ex: CLI0001): ")
+            id_cli = input("ID do cliente: ")
             code, obj = listar_transacoes_por_cliente(id_cli)
             if code == 200:
                 print(f"[{code}] {len(obj)} transacao(oes) encontrada(s).")
@@ -264,135 +357,27 @@ def menu_transacoes():
 
 
 # ══════════════════════════════════════════════════════════════
-#  SUB-MENU CASINOS
-# ══════════════════════════════════════════════════════════════
-
-def menu_casinos():
-    while True:
-        print("\n--- CASINOS ---")
-        print("1 - Criar casino")
-        print("2 - Listar casinos")
-        print("3 - Consultar casino")
-        print("4 - Atualizar casino")
-        print("5 - Remover casino")
-        print("6 - Adicionar item a sala (jogo/funcionario/cliente)")
-        print("7 - Remover item de sala (jogo/funcionario/cliente)")
-        print("8 - Listar sala (jogos/funcionarios/clientes)")
-        print("0 - Voltar")
-        opcao = input("Escolha: ").strip()
-
-        if opcao == "1":
-            nome  = input("Nome do casino: ")
-            loc   = input("Localizacao: ")
-            taxa  = input("Taxa/imposto (%): ")
-            moeda = input("Moeda (EUR/USD/GBP/CHF/JPY): ")
-            cap   = input("Capacidade maxima: ")
-            code, obj = criar_casino(nome, loc, taxa, moeda, cap)
-            if code == 201:
-                print(f"[{code}] Casino criado com sucesso.")
-                print(obj)
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "2":
-            code, obj = listar_todos_casinos()
-            if code == 200:
-                print(f"[{code}] {len(obj)} casino(s) encontrado(s).")
-                for c in obj:
-                    print(c)
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "3":
-            id_cas = input("ID do casino (ex: CAS0001): ")
-            code, obj = ler_casino_por_id(id_cas)
-            if code == 200:
-                print(f"[{code}] Casino encontrado.")
-                print(obj)
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "4":
-            id_cas = input("ID do casino: ")
-            print(f"Campos editaveis: {' | '.join(CAMPOS_EDITAVEIS_CASINO)}")
-            campo  = input("Campo a editar: ")
-            valor  = input("Novo valor: ")
-            code, obj = atualizar_casino(id_cas, campo, valor)
-            if code == 200:
-                print(f"[{code}] Casino actualizado com sucesso.")
-                print(obj)
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "5":
-            id_cas = input("ID do casino: ")
-            code, obj = remover_casino(id_cas)
-            if code == 200:
-                print(f"[{code}] {obj}")
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "6":
-            id_cas  = input("ID do casino: ")
-            tipo    = input("Tipo (jogos/funcionarios/clientes): ")
-            item_id = input("ID do item a adicionar: ")
-            code, obj = adicionar_item_sala(id_cas, tipo, item_id)
-            if code == 200:
-                print(f"[{code}] Item adicionado com sucesso.")
-                print(obj)
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "7":
-            id_cas  = input("ID do casino: ")
-            tipo    = input("Tipo (jogos/funcionarios/clientes): ")
-            item_id = input("ID do item a remover: ")
-            code, obj = remover_item_sala(id_cas, tipo, item_id)
-            if code == 200:
-                print(f"[{code}] Item removido com sucesso.")
-                print(obj)
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "8":
-            id_cas = input("ID do casino: ")
-            tipo   = input("Tipo (jogos/funcionarios/clientes): ")
-            code, obj = listar_sala(id_cas, tipo)
-            if code == 200:
-                print(f"[{code}] {len(obj)} item(ns) encontrado(s).")
-                for item in obj:
-                    print(item)
-            else:
-                print(f"[{code}] Erro: {obj}")
-
-        elif opcao == "0":
-            break
-        else:
-            print("[400] Opcao invalida.")
-
-
-# ══════════════════════════════════════════════════════════════
 #  MENU PRINCIPAL
 # ══════════════════════════════════════════════════════════════
 
 def menu_principal():
     while True:
         print("\n====== MENU PRINCIPAL — CASINO ======")
-        print("1 - Clientes")
-        print("2 - Jogos")
-        print("3 - Transacoes")
-        print("4 - Casinos")
+        print("1 - Casinos")
+        print("2 - Clientes")
+        print("3 - Jogos")
+        print("4 - Transacoes")
         print("0 - Sair")
         opcao = input("Escolha: ").strip()
 
         if opcao == "1":
-            menu_clientes()
-        elif opcao == "2":
-            menu_jogos()
-        elif opcao == "3":
-            menu_transacoes()
-        elif opcao == "4":
             menu_casinos()
+        elif opcao == "2":
+            menu_clientes()
+        elif opcao == "3":
+            menu_jogos()
+        elif opcao == "4":
+            menu_transacoes()
         elif opcao == "0":
             print("A sair...")
             break

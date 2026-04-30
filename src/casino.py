@@ -4,68 +4,34 @@
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
 # ══════════════════════════════════════════════════════════════
 
-# ── Tuplos de valores validos (imutaveis) ─────────────────────
-MOEDAS_VALIDAS = ("EUR", "USD", "GBP", "CHF", "JPY")
+from utils import (
+    validar_nome,
+    validar_localizacao,
+    validar_taxa,
+    validar_moeda,
+    validar_capacidade,
+    gerar_id_casino,
+    MOEDAS_VALIDAS,
+)
 
-# ── Dicionario principal: { "CAS0001": { campo: valor, ... } }
+# ── Dicionario principal: { "J01": { campo: valor, ... } }
 base_casinos = {}
 
-# ── Lista usada como pilha para controlo do contador de IDs
-pilha_ids_casino = [1]
+# ── Dicionario auxiliar de contadores por casino — { "J01_cliente": 2, ... }
+contadores_filhos = {}
 
 # ── Tuplo dos campos editaveis
 CAMPOS_EDITAVEIS_CASINO = (
     "nome", "localizacao", "taxa", "moeda", "capacidade_maxima"
 )
 
-
-# ══════════════════════════════════════════════════════════════
-#  VALIDACOES INTERNAS
-# ══════════════════════════════════════════════════════════════
-
-def _validar_nome(nome):
-    v = str(nome).strip()
-    if len(v) < 2:
-        return {"valido": False, "mensagem": "Nome deve ter pelo menos 2 caracteres.", "valor": None}
-    return {"valido": True, "mensagem": "OK", "valor": v}
-
-def _validar_localizacao(loc):
-    v = str(loc).strip()
-    if len(v) < 2:
-        return {"valido": False, "mensagem": "Localizacao invalida.", "valor": None}
-    return {"valido": True, "mensagem": "OK", "valor": v}
-
-def _validar_taxa(taxa):
-    try:
-        v = float(taxa)
-        if not (0.0 <= v <= 100.0):
-            return {"valido": False, "mensagem": "Taxa deve estar entre 0 e 100.", "valor": None}
-        return {"valido": True, "mensagem": "OK", "valor": round(v, 2)}
-    except (ValueError, TypeError):
-        return {"valido": False, "mensagem": "Taxa invalida. Deve ser um numero.", "valor": None}
-
-def _validar_moeda(moeda):
-    v = str(moeda).strip().upper()
-    if v not in MOEDAS_VALIDAS:
-        return {"valido": False, "mensagem": f"Moeda invalida. Validas: {' | '.join(MOEDAS_VALIDAS)}", "valor": None}
-    return {"valido": True, "mensagem": "OK", "valor": v}
-
-def _validar_capacidade(cap):
-    try:
-        v = int(cap)
-        if v <= 0:
-            return {"valido": False, "mensagem": "Capacidade deve ser maior que 0.", "valor": None}
-        return {"valido": True, "mensagem": "OK", "valor": v}
-    except (ValueError, TypeError):
-        return {"valido": False, "mensagem": "Capacidade invalida. Deve ser um numero inteiro.", "valor": None}
-
 # ── Dicionario de despacho de validacao — campo -> funcao
 VALIDACOES_CASINO = {
-    "nome"             : _validar_nome,
-    "localizacao"      : _validar_localizacao,
-    "taxa"             : _validar_taxa,
-    "moeda"            : _validar_moeda,
-    "capacidade_maxima": _validar_capacidade,
+    "nome"             : validar_nome,
+    "localizacao"      : validar_localizacao,
+    "taxa"             : validar_taxa,
+    "moeda"            : validar_moeda,
+    "capacidade_maxima": validar_capacidade,
 }
 
 
@@ -75,34 +41,33 @@ VALIDACOES_CASINO = {
 
 def criar_casino(nome, localizacao, taxa, moeda, capacidade_maxima):
     try:
-        rv = _validar_nome(nome)
+        rv = validar_nome(nome)
         if not rv["valido"]:
             return 422, rv["mensagem"]
         nome_ok = rv["valor"]
 
-        rv = _validar_localizacao(localizacao)
+        rv = validar_localizacao(localizacao)
         if not rv["valido"]:
             return 422, rv["mensagem"]
         loc_ok = rv["valor"]
 
-        rv = _validar_taxa(taxa)
+        rv = validar_taxa(taxa)
         if not rv["valido"]:
             return 422, rv["mensagem"]
         taxa_ok = rv["valor"]
 
-        rv = _validar_moeda(moeda)
+        rv = validar_moeda(moeda)
         if not rv["valido"]:
             return 422, rv["mensagem"]
         moeda_ok = rv["valor"]
 
-        rv = _validar_capacidade(capacidade_maxima)
+        rv = validar_capacidade(capacidade_maxima)
         if not rv["valido"]:
             return 422, rv["mensagem"]
         cap_ok = rv["valor"]
 
         # ── Construcao do registo ─────────────────────────────
-        id_casino = f"CAS{pilha_ids_casino[0]:04d}"
-        pilha_ids_casino[0] += 1
+        id_casino = gerar_id_casino(nome_ok)
 
         casino = {
             "id"               : id_casino,
@@ -111,11 +76,10 @@ def criar_casino(nome, localizacao, taxa, moeda, capacidade_maxima):
             "taxa"             : taxa_ok,
             "moeda"            : moeda_ok,
             "capacidade_maxima": cap_ok,
-            "salas"            : {
-                "jogos"        : [],
-                "funcionarios" : [],
-                "clientes"     : [],
-            },
+            "total_clientes"   : 0,
+            "total_jogos"      : 0,
+            "ids_clientes"     : [],
+            "ids_jogos"        : [],
         }
         base_casinos[id_casino] = casino
         return 201, casino
@@ -129,7 +93,7 @@ def criar_casino(nome, localizacao, taxa, moeda, capacidade_maxima):
 # ══════════════════════════════════════════════════════════════
 
 def ler_casino_por_id(id_casino):
-    c = base_casinos.get(str(id_casino).upper())
+    c = base_casinos.get(str(id_casino).strip().upper())
     if not c:
         return 404, "Casino nao encontrado."
     return 200, c
@@ -147,13 +111,37 @@ def listar_todos_casinos():
 def total_casinos():
     return len(base_casinos)
 
+def listar_casinos_disponiveis():
+    return [(c["id"], c["nome"]) for c in base_casinos.values()]
+
+
+# ══════════════════════════════════════════════════════════════
+#  REGISTAR CLIENTE / JOGO NO CASINO
+# ══════════════════════════════════════════════════════════════
+
+def registar_cliente_casino(id_casino, id_cliente):
+    c = base_casinos.get(str(id_casino).strip().upper())
+    if not c:
+        return 404, "Casino nao encontrado."
+    c["ids_clientes"].append(id_cliente)
+    c["total_clientes"] += 1
+    return 200, c
+
+def registar_jogo_casino(id_casino, id_jogo):
+    c = base_casinos.get(str(id_casino).strip().upper())
+    if not c:
+        return 404, "Casino nao encontrado."
+    c["ids_jogos"].append(id_jogo)
+    c["total_jogos"] += 1
+    return 200, c
+
 
 # ══════════════════════════════════════════════════════════════
 #  UPDATE — 200 OK | 404 Not Found | 400/422 erros
 # ══════════════════════════════════════════════════════════════
 
 def atualizar_casino(id_casino, campo, valor):
-    c = base_casinos.get(str(id_casino).upper())
+    c = base_casinos.get(str(id_casino).strip().upper())
     if not c:
         return 404, "Casino nao encontrado."
 
@@ -166,61 +154,9 @@ def atualizar_casino(id_casino, campo, valor):
         if not rv["valido"]:
             return 422, rv["mensagem"]
         c[campo] = rv["valor"]
-        return 200, c  # ← devolve objeto completo
+        return 200, c
 
     return 400, f"Campo '{campo}' nao pode ser editado."
-
-
-# ══════════════════════════════════════════════════════════════
-#  SALAS — gerir jogos / funcionarios / clientes
-# ══════════════════════════════════════════════════════════════
-
-def adicionar_item_sala(id_casino, tipo, item_id):
-    """
-    tipo: 'jogos' | 'funcionarios' | 'clientes'
-    item_id: ID do jogo / funcionario / cliente
-    """
-    c = base_casinos.get(str(id_casino).upper())
-    if not c:
-        return 404, "Casino nao encontrado."
-
-    tipo = str(tipo).lower().strip()
-    if tipo not in ("jogos", "funcionarios", "clientes"):
-        return 400, "Tipo invalido. Use: jogos | funcionarios | clientes"
-
-    item_id = str(item_id).strip().upper()
-    if item_id in c["salas"][tipo]:
-        return 409, f"'{item_id}' ja existe nas {tipo} deste casino."
-
-    c["salas"][tipo].append(item_id)
-    return 200, c
-
-def remover_item_sala(id_casino, tipo, item_id):
-    c = base_casinos.get(str(id_casino).upper())
-    if not c:
-        return 404, "Casino nao encontrado."
-
-    tipo = str(tipo).lower().strip()
-    if tipo not in ("jogos", "funcionarios", "clientes"):
-        return 400, "Tipo invalido. Use: jogos | funcionarios | clientes"
-
-    item_id = str(item_id).strip().upper()
-    if item_id not in c["salas"][tipo]:
-        return 404, f"'{item_id}' nao encontrado nas {tipo} deste casino."
-
-    c["salas"][tipo].remove(item_id)
-    return 200, c
-
-def listar_sala(id_casino, tipo):
-    c = base_casinos.get(str(id_casino).upper())
-    if not c:
-        return 404, "Casino nao encontrado."
-
-    tipo = str(tipo).lower().strip()
-    if tipo not in ("jogos", "funcionarios", "clientes"):
-        return 400, "Tipo invalido. Use: jogos | funcionarios | clientes"
-
-    return 200, c["salas"][tipo]
 
 
 # ══════════════════════════════════════════════════════════════
@@ -228,7 +164,7 @@ def listar_sala(id_casino, tipo):
 # ══════════════════════════════════════════════════════════════
 
 def remover_casino(id_casino):
-    id_upper = str(id_casino).upper()
+    id_upper = str(id_casino).strip().upper()
     if id_upper not in base_casinos:
         return 404, f"Casino '{id_casino}' nao encontrado."
     c = base_casinos.pop(id_upper)

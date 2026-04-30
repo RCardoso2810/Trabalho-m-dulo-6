@@ -120,7 +120,7 @@ def criar_cliente(id_casino, nome, data_nasc, genero, nacionalidade,
             "estado"         : estado_ok,
         }
         base_clientes[id_cliente] = cliente
-        registar_cliente_casino(id_cas_ok, id_cliente)
+        
         return 201, cliente
 
     except Exception as e:

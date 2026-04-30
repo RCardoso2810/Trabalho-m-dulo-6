@@ -142,7 +142,7 @@ def atualizar_transacao(id_transacao, campo, valor):
         if not rv["valido"]:
             return 422, rv["mensagem"]
         t[campo] = rv["valor"]
-        return 200, t  # ← devolve objeto completo
+        return 200, t
 
     return 400, f"Campo '{campo}' nao pode ser editado."
 

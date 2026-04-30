@@ -13,17 +13,18 @@ from utils import (
     validar_nivel,
     validar_estado,
     validar_sim_nao,
+    validar_casino_existe,
+    validar_id_casino,
+    gerar_id_filho,
 )
+from casino import base_casinos, contadores_filhos, registar_jogo_casino
 
 # Tuplos de valores validos (imutaveis)
 ESTADOS_JOGO = ("ATIVO", "INATIVO")
 NIVEIS_JOGO  = ("BRONZE", "PRATA", "OURO", "PLATINA", "VIP")
 
-# Dicionario principal: { "JOG0001": { campo: valor, ... } }
+# Dicionario principal: { "J0101": { campo: valor, ... } }
 base_jogos = {}
-
-# Lista usada como pilha para controlo do contador de IDs
-pilha_ids_jogo = [1]
 
 # Set dos campos que sao tipos (sub-dicionario "tipos")
 CAMPOS_TIPOS = {"dealer", "tabuleiro", "pecas", "cartas", "dados", "maquina"}
@@ -59,12 +60,22 @@ VALIDACOES_TIPOS_JOGO = {
 #  CREATE — 201 Created
 # ══════════════════════════════════════════════════════════════
 
-def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
+def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
                nivel_acesso, estado,
                tem_dealer, tem_tabuleiro, tem_pecas,
                tem_cartas, tem_dados, tem_maquina):
     try:
-        # ── Validacoes via dicionarios de despacho ────────────
+        # ── Verifica se existe casino ─────────────────────────
+        rv = validar_casino_existe(base_casinos)
+        if not rv["valido"]:
+            return 404, rv["mensagem"]
+
+        rv = validar_id_casino(id_casino, base_casinos)
+        if not rv["valido"]:
+            return 404, rv["mensagem"]
+        id_cas_ok = rv["valor"]
+
+        # ── Validacoes dos campos ─────────────────────────────
         rv = validar_nome_jogo(nome)
         if not rv["valido"]:
             return 422, rv["mensagem"]
@@ -111,12 +122,12 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
             tipos[campo_t] = rv["valor"]
 
         # ── Construcao do registo ─────────────────────────────
-        id_jogo = f"JOG{pilha_ids_jogo[0]:04d}"
-        pilha_ids_jogo[0] += 1
+        id_jogo = gerar_id_filho(id_cas_ok, contadores_filhos, "jogo")
 
         hoje = date.today()
         jogo = {
             "id"           : id_jogo,
+            "id_casino"    : id_cas_ok,
             "nome"         : str(nome).strip(),
             "custo_minimo" : custo_ok,
             "saldo_jogo"   : saldo_ok,
@@ -127,6 +138,7 @@ def criar_jogo(nome, custo_minimo, saldo_jogo, retorno,
             "tipos"        : tipos,
         }
         base_jogos[id_jogo] = jogo
+        registar_jogo_casino(id_cas_ok, id_jogo)
         return 201, jogo
 
     except Exception as e:
@@ -174,7 +186,6 @@ def atualizar_jogo(id_jogo, campo, valor):
     if campo not in CAMPOS_EDITAVEIS_JOGO:
         return 400, f"Campo '{campo}' invalido. Editaveis: {' | '.join(CAMPOS_EDITAVEIS_JOGO)}"
 
-    # ── Validacao via dicionarios de despacho ─────────────────
     if campo in VALIDACOES_JOGO:
         rv = VALIDACOES_JOGO[campo](valor)
         if not rv["valido"]:
@@ -202,4 +213,3 @@ def remover_jogo(id_jogo):
         return 404, f"Jogo '{id_jogo}' nao encontrado."
     j = base_jogos.pop(id_upper)
     return 200, f"Jogo '{j['nome']}' removido com sucesso."
-

@@ -78,6 +78,40 @@ def _e_telefone_valido(texto):
 
 
 # ══════════════════════════════════════════════════════════════
+#  GERACAO DE IDs
+# ══════════════════════════════════════════════════════════════
+
+# Dicionario auxiliar: { "J": 1, "M": 2, ... }
+_contadores_iniciais = {}
+
+def gerar_id_casino(nome):
+    inicial = str(nome).strip()[0].upper()
+    _contadores_iniciais[inicial] = _contadores_iniciais.get(inicial, 0) + 1
+    return f"{inicial}{_contadores_iniciais[inicial]:02d}"
+
+def gerar_id_filho(id_casino, contadores_filhos, prefixo):
+    chave = f"{id_casino}_{prefixo}"
+    contadores_filhos[chave] = contadores_filhos.get(chave, 0) + 1
+    return f"{id_casino}{contadores_filhos[chave]:02d}"
+
+
+# ══════════════════════════════════════════════════════════════
+#  VALIDACAO DE CASINO
+# ══════════════════════════════════════════════════════════════
+
+def validar_casino_existe(base_casinos):
+    if not base_casinos:
+        return _erro("Nao existe nenhum casino registado. Crie um casino primeiro.", 404)
+    return _ok(True)
+
+def validar_id_casino(id_casino, base_casinos):
+    id_upper = str(id_casino).strip().upper()
+    if id_upper not in base_casinos:
+        return _erro(f"Casino '{id_casino}' nao encontrado.", 404)
+    return _ok(id_upper)
+
+
+# ══════════════════════════════════════════════════════════════
 #  VALIDACOES — CLIENTE / JOGO
 # ══════════════════════════════════════════════════════════════
 
@@ -297,11 +331,8 @@ def validar_capacidade(cap):
 
 def validar_id_cliente(id_cliente):
     v = str(id_cliente).strip().upper()
-    if not v.startswith("CLI") or len(v) != 7:
-        return _erro("ID cliente invalido. Formato: CLI0001", 422)
-    sufixo = v[3:]
-    if not _todos_chars_validos(sufixo, DIGITOS):
-        return _erro("ID cliente invalido. Formato: CLI0001", 422)
+    if len(v) < 4:
+        return _erro("ID cliente invalido.", 422)
     return _ok(v)
 
 

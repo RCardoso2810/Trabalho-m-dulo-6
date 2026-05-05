@@ -18,7 +18,7 @@ from utils import (
     validar_id_casino,
     gerar_id_filho,
 )
-from casino import base_casinos, contadores_filhos, registar_cliente_casino
+from casino import base_casinos, contadores_filhos 
 
 # Tuplos de valores validos (imutaveis)
 GENEROS_VALIDOS = ("M", "F", "OUTRO")
@@ -183,4 +183,4 @@ def remover_cliente(id_cliente):
     if id_upper not in base_clientes:
         return 404, f"Cliente '{id_cliente}' nao encontrado."
     c = base_clientes.pop(id_upper)
-    return 200, f"Cliente '{c['nome']}' removido com sucesso."
+    return 200,c

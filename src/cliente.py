@@ -14,18 +14,19 @@ from utils import (
     validar_saldo,
     validar_nivel,
     validar_estado,
+    validar_casino_existe,
+    validar_id_casino,
+    gerar_id_filho,
 )
+from casino import base_casinos, contadores_filhos 
 
 # Tuplos de valores validos (imutaveis)
 GENEROS_VALIDOS = ("M", "F", "OUTRO")
 NIVEIS_VALIDOS  = ("BRONZE", "PRATA", "OURO", "PLATINA", "VIP")
 ESTADOS_VALIDOS = ("ATIVO", "INATIVO")
 
-# Dicionario principal: { "CLI0001": { campo: valor, ... } }
+# Dicionario principal: { "J0101": { campo: valor, ... } }
 base_clientes = {}
-
-# Lista usada como pilha para controlo do contador de IDs
-pilha_ids_cliente = [1]
 
 # Tuplo dos campos editaveis
 CAMPOS_EDITAVEIS_CLIENTE = (
@@ -50,9 +51,20 @@ VALIDACOES_CLIENTE = {
 #  CREATE — 201 Created
 # ══════════════════════════════════════════════════════════════
 
-def criar_cliente(nome, data_nasc, genero, nacionalidade,
+def criar_cliente(id_casino, nome, data_nasc, genero, nacionalidade,
                   contacto, saldo, nivel, estado="ATIVO"):
     try:
+        # ── Verifica se existe casino ─────────────────────────
+        rv = validar_casino_existe(base_casinos)
+        if not rv["valido"]:
+            return 404, rv["mensagem"]
+
+        rv = validar_id_casino(id_casino, base_casinos)
+        if not rv["valido"]:
+            return 404, rv["mensagem"]
+        id_cas_ok = rv["valor"]
+
+        # ── Validacoes dos campos ─────────────────────────────
         rv = validar_nome(nome)
         if not rv["valido"]:
             return 422, rv["mensagem"]
@@ -90,12 +102,13 @@ def criar_cliente(nome, data_nasc, genero, nacionalidade,
         estado_ok = rv["valor"]
 
         # ── Construcao do registo ─────────────────────────────
-        id_cliente = f"CLI{pilha_ids_cliente[0]:04d}"
-        pilha_ids_cliente[0] += 1
+        # Cliente pode estar em varios casinos — ID unico por casino
+        id_cliente = gerar_id_filho(id_cas_ok, contadores_filhos, "cliente")
 
         hoje = date.today()
         cliente = {
             "id"             : id_cliente,
+            "id_casino"      : id_cas_ok,
             "nome"           : str(nome).strip(),
             "data_nascimento": str(data_nasc).strip(),
             "genero"         : genero_ok,
@@ -107,6 +120,7 @@ def criar_cliente(nome, data_nasc, genero, nacionalidade,
             "estado"         : estado_ok,
         }
         base_clientes[id_cliente] = cliente
+        
         return 201, cliente
 
     except Exception as e:
@@ -150,13 +164,12 @@ def atualizar_cliente(id_cliente, campo, valor):
     if campo not in CAMPOS_EDITAVEIS_CLIENTE:
         return 400, f"Campo '{campo}' invalido. Editaveis: {' | '.join(CAMPOS_EDITAVEIS_CLIENTE)}"
 
-    # ── Validacao via dicionario de despacho ──────────────────
     if campo in VALIDACOES_CLIENTE:
         rv = VALIDACOES_CLIENTE[campo](valor)
         if not rv["valido"]:
             return 422, rv["mensagem"]
         c[campo] = rv["valor"]
-        return 200, c  # ← alterado: devolve objeto completo
+        return 200, c
 
     return 400, f"Campo '{campo}' nao pode ser editado."
 
@@ -170,4 +183,4 @@ def remover_cliente(id_cliente):
     if id_upper not in base_clientes:
         return 404, f"Cliente '{id_cliente}' nao encontrado."
     c = base_clientes.pop(id_upper)
-    return 200, f"Cliente '{c['nome']}' removido com sucesso."
+    return 200,c

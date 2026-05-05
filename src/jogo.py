@@ -17,8 +17,7 @@ from utils import (
     validar_id_casino,
     gerar_id_filho,
 )
-from casino import base_casinos, contadores_filhos, registar_jogo_casino
-
+from casino import base_casinos, contadores_filhos
 # Tuplos de valores validos (imutaveis)
 ESTADOS_JOGO = ("ATIVO", "INATIVO")
 NIVEIS_JOGO  = ("BRONZE", "PRATA", "OURO", "PLATINA", "VIP")
@@ -212,4 +211,4 @@ def remover_jogo(id_jogo):
     if id_upper not in base_jogos:
         return 404, f"Jogo '{id_jogo}' nao encontrado."
     j = base_jogos.pop(id_upper)
-    return 200, f"Jogo '{j['nome']}' removido com sucesso."
+    return 200, j

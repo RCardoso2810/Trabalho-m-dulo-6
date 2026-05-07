@@ -156,4 +156,4 @@ def remover_transacao(id_transacao):
     if id_upper not in base_transacoes:
         return 404, f"Transacao '{id_transacao}' nao encontrada."
     t = base_transacoes.pop(id_upper)
-    return 200, f"Transacao '{t['id']}' removida com sucesso."
+    return 200, t

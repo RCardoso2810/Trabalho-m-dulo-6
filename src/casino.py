@@ -149,4 +149,4 @@ def remover_casino(id_casino):
     if id_upper not in base_casinos:
         return 404, f"Casino '{id_casino}' nao encontrado."
     c = base_casinos.pop(id_upper)
-    return 200, f"Casino '{id_casino}' removido com sucesso."
+    return 200, c

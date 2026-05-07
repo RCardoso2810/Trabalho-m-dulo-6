@@ -25,11 +25,17 @@ LETRAS_JOGO = set(
 
 DIGITOS        = set("0123456789")
 CHARS_TELEFONE = set("0123456789 +-() ")
+CHARS_NUMERO   = set("0123456789.")
 
 # Tuplos de valores validos
-GENEROS_VALIDOS = ("M", "F", "OUTRO")
-NIVEIS_VALIDOS  = ("BRONZE", "PRATA", "OURO", "PLATINA", "VIP")
-ESTADOS_VALIDOS = ("ATIVO", "INATIVO")
+GENEROS_VALIDOS           = ("M", "F", "OUTRO")
+NIVEIS_VALIDOS            = ("BRONZE", "PRATA", "OURO", "PLATINA", "VIP")
+ESTADOS_VALIDOS           = ("ATIVO", "INATIVO")
+MOEDAS_VALIDAS            = ("EUR", "USD", "GBP", "CHF", "JPY")
+TIPOS_TRANSACAO_VALIDOS   = ("ENTRADA", "SAIDA")
+TIPOS_MOVIMENTO_VALIDOS   = ("ENTRADA", "SAIDA")
+METODOS_PAGAMENTO_VALIDOS = ("DINHEIRO", "CARTAO", "TRANSFERENCIA", "CRYPTO")
+ESTADOS_TRANSACAO_VALIDOS = ("PENDENTE", "CONCLUIDA", "CANCELADA")
 
 
 # ── Resultado de validacao ────────────────────────────────────
@@ -72,7 +78,41 @@ def _e_telefone_valido(texto):
 
 
 # ══════════════════════════════════════════════════════════════
-#  VALIDACOES
+#  GERACAO DE IDs
+# ══════════════════════════════════════════════════════════════
+
+# Dicionario auxiliar: { "J": 1, "M": 2, ... }
+_contadores_iniciais = {}
+
+def gerar_id_casino(nome):
+    inicial = str(nome).strip()[0].upper()
+    _contadores_iniciais[inicial] = _contadores_iniciais.get(inicial, 0) + 1
+    return f"{inicial}{_contadores_iniciais[inicial]:02d}"
+
+def gerar_id_filho(id_casino, contadores_filhos, prefixo):
+    chave = f"{id_casino}_{prefixo}"
+    contadores_filhos[chave] = contadores_filhos.get(chave, 0) + 1
+    return f"{id_casino}{contadores_filhos[chave]:02d}"
+
+
+# ══════════════════════════════════════════════════════════════
+#  VALIDACAO DE CASINO
+# ══════════════════════════════════════════════════════════════
+
+def validar_casino_existe(base_casinos):
+    if not base_casinos:
+        return _erro("Nao existe nenhum casino registado. Crie um casino primeiro.", 404)
+    return _ok(True)
+
+def validar_id_casino(id_casino, base_casinos):
+    id_upper = str(id_casino).strip().upper()
+    if id_upper not in base_casinos:
+        return _erro(f"Casino '{id_casino}' nao encontrado.", 404)
+    return _ok(id_upper)
+
+
+# ══════════════════════════════════════════════════════════════
+#  VALIDACOES — CLIENTE / JOGO
 # ══════════════════════════════════════════════════════════════
 
 def validar_nome(nome):
@@ -161,8 +201,7 @@ def validar_contacto(contacto):
 def validar_saldo(saldo):
     s = str(saldo).replace(",", ".").strip()
     s_teste = s[1:] if s.startswith("-") else s
-    chars_numero = set("0123456789.")
-    if not s_teste or not _todos_chars_validos(s_teste, chars_numero) or s_teste.count(".") > 1:
+    if not s_teste or not _todos_chars_validos(s_teste, CHARS_NUMERO) or s_teste.count(".") > 1:
         return _erro(f"Saldo invalido: \"{saldo}\".  Ex: 500  ou  1250.75  ou  0", 422)
     v = float(s)
     if v < 0:
@@ -202,8 +241,7 @@ def validar_sim_nao(valor, campo="Campo"):
 def validar_custo_minimo(valor):
     s = str(valor).replace(",", ".").strip()
     s_teste = s[1:] if s.startswith("-") else s
-    chars_numero = set("0123456789.")
-    if not s_teste or not _todos_chars_validos(s_teste, chars_numero):
+    if not s_teste or not _todos_chars_validos(s_teste, CHARS_NUMERO):
         return _erro(f"Custo minimo invalido: \"{valor}\".  Ex: 5  ou  10.50  ou  0", 422)
     v = float(s)
     if v < 0:
@@ -214,8 +252,7 @@ def validar_custo_minimo(valor):
 def validar_retorno(valor):
     s = str(valor).replace(",", ".").strip()
     s_teste = s[1:] if s.startswith("-") else s
-    chars_numero = set("0123456789.")
-    if not s_teste or not _todos_chars_validos(s_teste, chars_numero):
+    if not s_teste or not _todos_chars_validos(s_teste, CHARS_NUMERO):
         return _erro(f"Retorno invalido: \"{valor}\".  Ex: 35  ou  2.5  ou  -0.5", 422)
     return _ok(round(float(s), 2))
 
@@ -223,8 +260,7 @@ def validar_retorno(valor):
 def validar_saldo_jogo(valor):
     s = str(valor).replace(",", ".").strip()
     s_teste = s[1:] if s.startswith("-") else s
-    chars_numero = set("0123456789.")
-    if not s_teste or not _todos_chars_validos(s_teste, chars_numero):
+    if not s_teste or not _todos_chars_validos(s_teste, CHARS_NUMERO):
         return _erro(f"Saldo do jogo invalido: \"{valor}\".  Ex: 50000  ou  1000.00", 422)
     v = float(s)
     if v < 0:
@@ -243,3 +279,96 @@ def validar_nome_jogo(nome):
     if not _todos_chars_validos(n, LETRAS_JOGO):
         return _erro(f"Nome do jogo contem caracteres invalidos.  Recebido: \"{n}\"", 422)
     return _ok(n)
+
+
+# ══════════════════════════════════════════════════════════════
+#  VALIDACOES — CASINO
+# ══════════════════════════════════════════════════════════════
+
+def validar_localizacao(loc):
+    v = str(loc).strip()
+    if not v:
+        return _erro("Localizacao nao pode estar vazia.  Ex: Lisboa, Portugal", 400)
+    if _tem_digito(v):
+        return _erro(f"Localizacao nao pode conter numeros.  Recebido: \"{v}\"", 422)
+    if not _todos_chars_validos(v, LETRAS_NOME | set(",")):
+        return _erro(f"Localizacao contem caracteres invalidos.  Recebido: \"{v}\"", 422)
+    if len(v) < 2:
+        return _erro("Localizacao demasiado curta (min. 2 caracteres).", 422)
+    return _ok(v)
+
+
+def validar_taxa(taxa):
+    s = str(taxa).replace(",", ".").strip()
+    if not s or not _todos_chars_validos(s, CHARS_NUMERO) or s.count(".") > 1:
+        return _erro(f"Taxa invalida: \"{taxa}\".  Ex: 20  ou  15.5", 422)
+    v = float(s)
+    if not (0.0 <= v <= 100.0):
+        return _erro(f"Taxa deve estar entre 0 e 100.  Recebido: {v}", 422)
+    return _ok(round(v, 2))
+
+
+def validar_moeda(moeda):
+    v = str(moeda).strip().upper()
+    if v not in MOEDAS_VALIDAS:
+        return _erro(f"Moeda invalida: \"{moeda}\".  Validas: {' | '.join(MOEDAS_VALIDAS)}", 422)
+    return _ok(v)
+
+
+def validar_capacidade(cap):
+    s = str(cap).strip()
+    if not s or not _todos_chars_validos(s, DIGITOS):
+        return _erro(f"Capacidade invalida: \"{cap}\".  Ex: 200", 422)
+    v = int(s)
+    if v <= 0:
+        return _erro(f"Capacidade deve ser maior que 0.  Recebido: {v}", 422)
+    return _ok(v)
+
+
+# ══════════════════════════════════════════════════════════════
+#  VALIDACOES — TRANSACAO
+# ══════════════════════════════════════════════════════════════
+
+def validar_id_cliente(id_cliente):
+    v = str(id_cliente).strip().upper()
+    if len(v) < 4:
+        return _erro("ID cliente invalido.", 422)
+    return _ok(v)
+
+
+def validar_tipo_transacao(tipo):
+    v = str(tipo).strip().upper()
+    if v not in TIPOS_TRANSACAO_VALIDOS:
+        return _erro(f"Tipo invalido: \"{tipo}\".  Validos: {' | '.join(TIPOS_TRANSACAO_VALIDOS)}", 422)
+    return _ok(v)
+
+
+def validar_tipo_movimento(tipo_mov):
+    v = str(tipo_mov).strip().upper()
+    if v not in TIPOS_MOVIMENTO_VALIDOS:
+        return _erro(f"Tipo movimento invalido: \"{tipo_mov}\".  Validos: {' | '.join(TIPOS_MOVIMENTO_VALIDOS)}", 422)
+    return _ok(v)
+
+
+def validar_montante(montante):
+    s = str(montante).replace(",", ".").strip()
+    if not s or not _todos_chars_validos(s, CHARS_NUMERO) or s.count(".") > 1:
+        return _erro(f"Montante invalido: \"{montante}\".  Ex: 100  ou  25.50", 422)
+    v = float(s)
+    if v <= 0:
+        return _erro(f"Montante deve ser maior que 0.  Recebido: {v}", 422)
+    return _ok(round(v, 2))
+
+
+def validar_metodo_pagamento(metodo):
+    v = str(metodo).strip().upper()
+    if v not in METODOS_PAGAMENTO_VALIDOS:
+        return _erro(f"Metodo invalido: \"{metodo}\".  Validos: {' | '.join(METODOS_PAGAMENTO_VALIDOS)}", 422)
+    return _ok(v)
+
+
+def validar_estado_transacao(estado):
+    v = str(estado).strip().upper()
+    if v not in ESTADOS_TRANSACAO_VALIDOS:
+        return _erro(f"Estado invalido: \"{estado}\".  Validos: {' | '.join(ESTADOS_TRANSACAO_VALIDOS)}", 422)
+    return _ok(v)

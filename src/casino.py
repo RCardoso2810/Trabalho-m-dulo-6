@@ -4,6 +4,7 @@
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
 # ══════════════════════════════════════════════════════════════
 
+import json
 from utils import (
     validar_nome,
     validar_localizacao,
@@ -12,6 +13,8 @@ from utils import (
     validar_capacidade,
     gerar_id_casino,
     MOEDAS_VALIDAS,
+    validar_base_para_guardar,
+    validar_ficheiro_para_carregar,
 )
 
 # ── Dicionario principal: { "J01": { campo: valor, ... } }
@@ -33,6 +36,9 @@ VALIDACOES_CASINO = {
     "moeda"            : validar_moeda,
     "capacidade_maxima": validar_capacidade,
 }
+
+# ── Caminho do ficheiro JSON de persistencia
+FICHEIRO_CASINOS = "casinos.json"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -115,8 +121,6 @@ def listar_casinos_disponiveis():
     return [(c["id"], c["nome"]) for c in base_casinos.values()]
 
 
-
-
 # ══════════════════════════════════════════════════════════════
 #  UPDATE — 200 OK | 404 Not Found | 400/422 erros
 # ══════════════════════════════════════════════════════════════
@@ -150,3 +154,41 @@ def remover_casino(id_casino):
         return 404, f"Casino '{id_casino}' nao encontrado."
     c = base_casinos.pop(id_upper)
     return 200, c
+
+
+# ══════════════════════════════════════════════════════════════
+#  PERSISTENCIA — guardar / carregar JSON
+# ══════════════════════════════════════════════════════════════
+
+def guardar_ficheiro_casinos():
+    """Guarda base_casinos e contadores_filhos em JSON."""
+    rv = validar_base_para_guardar(base_casinos, "casinos")
+    if not rv["valido"]:
+        return 404, rv["mensagem"]
+    try:
+        dados = {
+            "base_casinos"      : base_casinos,
+            "contadores_filhos" : contadores_filhos,
+        }
+        with open(FICHEIRO_CASINOS, "w", encoding="utf-8") as f:
+            json.dump(dados, f, ensure_ascii=False, indent=2)
+        return 200, f"Casinos guardados com sucesso em '{FICHEIRO_CASINOS}' ({len(base_casinos)} registo(s))."
+    except Exception as e:
+        return 500, f"Erro ao guardar ficheiro: {e}"
+
+
+def carregar_ficheiro_casinos():
+    """Carrega base_casinos e contadores_filhos a partir do JSON."""
+    rv = validar_ficheiro_para_carregar(FICHEIRO_CASINOS, "casinos")
+    if not rv["valido"]:
+        return 404, rv["mensagem"]
+    try:
+        with open(FICHEIRO_CASINOS, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        base_casinos.clear()
+        base_casinos.update(dados.get("base_casinos", {}))
+        contadores_filhos.clear()
+        contadores_filhos.update(dados.get("contadores_filhos", {}))
+        return 200, f"Casinos carregados com sucesso de '{FICHEIRO_CASINOS}' ({len(base_casinos)} registo(s))."
+    except Exception as e:
+        return 500, f"Erro ao carregar ficheiro: {e}"

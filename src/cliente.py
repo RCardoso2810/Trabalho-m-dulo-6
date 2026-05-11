@@ -4,6 +4,7 @@
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
 # ══════════════════════════════════════════════════════════════
 
+import json
 from datetime import date
 from utils import (
     validar_nome,
@@ -17,8 +18,10 @@ from utils import (
     validar_casino_existe,
     validar_id_casino,
     gerar_id_filho,
+    validar_base_para_guardar,
+    validar_ficheiro_para_carregar,
 )
-from casino import base_casinos, contadores_filhos 
+from casino import base_casinos, contadores_filhos
 
 # Tuplos de valores validos (imutaveis)
 GENEROS_VALIDOS = ("M", "F", "OUTRO")
@@ -45,6 +48,9 @@ VALIDACOES_CLIENTE = {
     "nivel"           : validar_nivel,
     "estado"          : validar_estado,
 }
+
+# ── Caminho do ficheiro JSON de persistencia
+FICHEIRO_CLIENTES = "clientes.json"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -102,7 +108,6 @@ def criar_cliente(id_casino, nome, data_nasc, genero, nacionalidade,
         estado_ok = rv["valor"]
 
         # ── Construcao do registo ─────────────────────────────
-        # Cliente pode estar em varios casinos — ID unico por casino
         id_cliente = gerar_id_filho(id_cas_ok, contadores_filhos, "cliente")
 
         hoje = date.today()
@@ -120,7 +125,7 @@ def criar_cliente(id_casino, nome, data_nasc, genero, nacionalidade,
             "estado"         : estado_ok,
         }
         base_clientes[id_cliente] = cliente
-        
+
         return 201, cliente
 
     except Exception as e:
@@ -183,4 +188,36 @@ def remover_cliente(id_cliente):
     if id_upper not in base_clientes:
         return 404, f"Cliente '{id_cliente}' nao encontrado."
     c = base_clientes.pop(id_upper)
-    return 200,c
+    return 200, c
+
+
+# ══════════════════════════════════════════════════════════════
+#  PERSISTENCIA — guardar / carregar JSON
+# ══════════════════════════════════════════════════════════════
+
+def guardar_ficheiro_clientes():
+    """Guarda base_clientes em JSON."""
+    rv = validar_base_para_guardar(base_clientes, "clientes")
+    if not rv["valido"]:
+        return 404, rv["mensagem"]
+    try:
+        with open(FICHEIRO_CLIENTES, "w", encoding="utf-8") as f:
+            json.dump(base_clientes, f, ensure_ascii=False, indent=2)
+        return 200, f"Clientes guardados com sucesso em '{FICHEIRO_CLIENTES}' ({len(base_clientes)} registo(s))."
+    except Exception as e:
+        return 500, f"Erro ao guardar ficheiro: {e}"
+
+
+def carregar_ficheiro_clientes():
+    """Carrega base_clientes a partir do JSON."""
+    rv = validar_ficheiro_para_carregar(FICHEIRO_CLIENTES, "clientes")
+    if not rv["valido"]:
+        return 404, rv["mensagem"]
+    try:
+        with open(FICHEIRO_CLIENTES, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        base_clientes.clear()
+        base_clientes.update(dados)
+        return 200, f"Clientes carregados com sucesso de '{FICHEIRO_CLIENTES}' ({len(base_clientes)} registo(s))."
+    except Exception as e:
+        return 500, f"Erro ao carregar ficheiro: {e}"

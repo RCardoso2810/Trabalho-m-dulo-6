@@ -4,6 +4,7 @@
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
 # ══════════════════════════════════════════════════════════════
 
+import json
 from datetime import date
 from utils import (
     validar_nome_jogo,
@@ -16,8 +17,11 @@ from utils import (
     validar_casino_existe,
     validar_id_casino,
     gerar_id_filho,
+    validar_base_para_guardar,
+    validar_ficheiro_para_carregar,
 )
 from casino import base_casinos, contadores_filhos
+
 # Tuplos de valores validos (imutaveis)
 ESTADOS_JOGO = ("ATIVO", "INATIVO")
 NIVEIS_JOGO  = ("BRONZE", "PRATA", "OURO", "PLATINA", "VIP")
@@ -53,6 +57,9 @@ VALIDACOES_TIPOS_JOGO = {
     "dados"     : lambda v: validar_sim_nao(v, "dados"),
     "maquina"   : lambda v: validar_sim_nao(v, "maquina"),
 }
+
+# ── Caminho do ficheiro JSON de persistencia
+FICHEIRO_JOGOS = "jogos.json"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -137,7 +144,7 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
             "tipos"        : tipos,
         }
         base_jogos[id_jogo] = jogo
-        
+
         return 201, jogo
 
     except Exception as e:
@@ -212,3 +219,35 @@ def remover_jogo(id_jogo):
         return 404, f"Jogo '{id_jogo}' nao encontrado."
     j = base_jogos.pop(id_upper)
     return 200, j
+
+
+# ══════════════════════════════════════════════════════════════
+#  PERSISTENCIA — guardar / carregar JSON
+# ══════════════════════════════════════════════════════════════
+
+def guardar_ficheiro_jogos():
+    """Guarda base_jogos em JSON."""
+    rv = validar_base_para_guardar(base_jogos, "jogos")
+    if not rv["valido"]:
+        return 404, rv["mensagem"]
+    try:
+        with open(FICHEIRO_JOGOS, "w", encoding="utf-8") as f:
+            json.dump(base_jogos, f, ensure_ascii=False, indent=2)
+        return 200, f"Jogos guardados com sucesso em '{FICHEIRO_JOGOS}' ({len(base_jogos)} registo(s))."
+    except Exception as e:
+        return 500, f"Erro ao guardar ficheiro: {e}"
+
+
+def carregar_ficheiro_jogos():
+    """Carrega base_jogos a partir do JSON."""
+    rv = validar_ficheiro_para_carregar(FICHEIRO_JOGOS, "jogos")
+    if not rv["valido"]:
+        return 404, rv["mensagem"]
+    try:
+        with open(FICHEIRO_JOGOS, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        base_jogos.clear()
+        base_jogos.update(dados)
+        return 200, f"Jogos carregados com sucesso de '{FICHEIRO_JOGOS}' ({len(base_jogos)} registo(s))."
+    except Exception as e:
+        return 500, f"Erro ao carregar ficheiro: {e}"

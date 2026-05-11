@@ -7,19 +7,23 @@ from casino import (
     criar_casino, ler_casino_por_id, listar_todos_casinos,
     atualizar_casino, remover_casino, listar_casinos_disponiveis,
     CAMPOS_EDITAVEIS_CASINO,
+    guardar_ficheiro_casinos, carregar_ficheiro_casinos,
 )
 from cliente import (
     criar_cliente, ler_cliente_por_id, listar_todos_clientes,
     atualizar_cliente, remover_cliente, CAMPOS_EDITAVEIS_CLIENTE,
+    guardar_ficheiro_clientes, carregar_ficheiro_clientes,
 )
 from jogo import (
     criar_jogo, ler_jogo_por_id, listar_todos_jogos,
     atualizar_jogo, remover_jogo, CAMPOS_EDITAVEIS_JOGO,
+    guardar_ficheiro_jogos, carregar_ficheiro_jogos,
 )
 from transacao import (
     criar_transacao, ler_transacao_por_id, listar_todas_transacoes,
     listar_transacoes_por_cliente, atualizar_transacao, remover_transacao,
     CAMPOS_EDITAVEIS_TRANSACAO,
+    guardar_ficheiro_transacoes, carregar_ficheiro_transacoes,
 )
 
 
@@ -47,6 +51,8 @@ def menu_casinos():
         print("3 - Consultar casino")
         print("4 - Atualizar casino")
         print("5 - Remover casino")
+        print("6 - Carregar casinos (ficheiro JSON)")
+        print("7 - Guardar casinos (ficheiro JSON)")
         print("0 - Voltar")
         opcao = input("Escolha: ").strip()
 
@@ -103,6 +109,14 @@ def menu_casinos():
             else:
                 print(f"[{code}] Erro: {obj}")
 
+        elif opcao == "6":
+            code, msg = carregar_ficheiro_casinos()
+            print(f"[{code}] {msg}")
+
+        elif opcao == "7":
+            code, msg = guardar_ficheiro_casinos()
+            print(f"[{code}] {msg}")
+
         elif opcao == "0":
             break
         else:
@@ -121,6 +135,8 @@ def menu_clientes():
         print("3 - Consultar cliente")
         print("4 - Atualizar cliente")
         print("5 - Remover cliente")
+        print("6 - Carregar clientes (ficheiro JSON)")
+        print("7 - Guardar clientes (ficheiro JSON)")
         print("0 - Voltar")
         opcao = input("Escolha: ").strip()
 
@@ -182,6 +198,14 @@ def menu_clientes():
             else:
                 print(f"[{code}] Erro: {obj}")
 
+        elif opcao == "6":
+            code, msg = carregar_ficheiro_clientes()
+            print(f"[{code}] {msg}")
+
+        elif opcao == "7":
+            code, msg = guardar_ficheiro_clientes()
+            print(f"[{code}] {msg}")
+
         elif opcao == "0":
             break
         else:
@@ -200,6 +224,8 @@ def menu_jogos():
         print("3 - Consultar jogo")
         print("4 - Atualizar jogo")
         print("5 - Remover jogo")
+        print("6 - Carregar jogos (ficheiro JSON)")
+        print("7 - Guardar jogos (ficheiro JSON)")
         print("0 - Voltar")
         opcao = input("Escolha: ").strip()
 
@@ -266,6 +292,14 @@ def menu_jogos():
             else:
                 print(f"[{code}] Erro: {obj}")
 
+        elif opcao == "6":
+            code, msg = carregar_ficheiro_jogos()
+            print(f"[{code}] {msg}")
+
+        elif opcao == "7":
+            code, msg = guardar_ficheiro_jogos()
+            print(f"[{code}] {msg}")
+
         elif opcao == "0":
             break
         else:
@@ -285,6 +319,8 @@ def menu_transacoes():
         print("4 - Listar transacoes por cliente")
         print("5 - Atualizar transacao")
         print("6 - Remover transacao")
+        print("7 - Carregar transacoes (ficheiro JSON)")
+        print("8 - Guardar transacoes (ficheiro JSON)")
         print("0 - Voltar")
         opcao = input("Escolha: ").strip()
 
@@ -349,6 +385,14 @@ def menu_transacoes():
                 print(f"[{code}] {obj}")
             else:
                 print(f"[{code}] Erro: {obj}")
+
+        elif opcao == "7":
+            code, msg = carregar_ficheiro_transacoes()
+            print(f"[{code}] {msg}")
+
+        elif opcao == "8":
+            code, msg = guardar_ficheiro_transacoes()
+            print(f"[{code}] {msg}")
 
         elif opcao == "0":
             break

@@ -5,6 +5,7 @@
 # ══════════════════════════════════════════════════════════════
 
 import json
+import os
 from utils import (
     validar_nome,
     validar_localizacao,
@@ -13,8 +14,6 @@ from utils import (
     validar_capacidade,
     gerar_id_casino,
     MOEDAS_VALIDAS,
-    validar_base_para_guardar,
-    validar_ficheiro_para_carregar,
 )
 
 # ── Dicionario principal: { "J01": { campo: valor, ... } }
@@ -37,8 +36,29 @@ VALIDACOES_CASINO = {
     "capacidade_maxima": validar_capacidade,
 }
 
-# ── Caminho do ficheiro JSON de persistencia
 FICHEIRO_CASINOS = "casinos.json"
+
+
+# ══════════════════════════════════════════════════════════════
+#  PERSISTENCIA
+# ══════════════════════════════════════════════════════════════
+
+def guardar_casinos():
+    with open(FICHEIRO_CASINOS, "w", encoding="utf-8") as f:
+        json.dump({"base_casinos": base_casinos, "contadores_filhos": contadores_filhos}, f, indent=4, ensure_ascii=False)
+
+def carregar_casinos():
+    global base_casinos, contadores_filhos
+    if os.path.exists(FICHEIRO_CASINOS):
+        with open(FICHEIRO_CASINOS, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        base_casinos.clear()
+        base_casinos.update(dados.get("base_casinos", {}))
+        contadores_filhos.clear()
+        contadores_filhos.update(dados.get("contadores_filhos", {}))
+    else:
+        base_casinos.clear()
+        contadores_filhos.clear()
 
 
 # ══════════════════════════════════════════════════════════════
@@ -46,6 +66,7 @@ FICHEIRO_CASINOS = "casinos.json"
 # ══════════════════════════════════════════════════════════════
 
 def criar_casino(nome, localizacao, taxa, moeda, capacidade_maxima):
+    carregar_casinos()
     try:
         rv = validar_nome(nome)
         if not rv["valido"]:
@@ -72,7 +93,6 @@ def criar_casino(nome, localizacao, taxa, moeda, capacidade_maxima):
             return 422, rv["mensagem"]
         cap_ok = rv["valor"]
 
-        # ── Construcao do registo ─────────────────────────────
         id_casino = gerar_id_casino(nome_ok)
 
         casino = {
@@ -88,6 +108,7 @@ def criar_casino(nome, localizacao, taxa, moeda, capacidade_maxima):
             "ids_jogos"        : [],
         }
         base_casinos[id_casino] = casino
+        guardar_casinos()
         return 201, casino
 
     except Exception as e:
@@ -99,25 +120,30 @@ def criar_casino(nome, localizacao, taxa, moeda, capacidade_maxima):
 # ══════════════════════════════════════════════════════════════
 
 def ler_casino_por_id(id_casino):
+    carregar_casinos()
     c = base_casinos.get(str(id_casino).strip().upper())
     if not c:
         return 404, "Casino nao encontrado."
     return 200, c
 
 def ler_casino_por_nome(nome):
+    carregar_casinos()
     for c in base_casinos.values():
         if c["nome"].lower() == str(nome).strip().lower():
             return 200, c
     return 404, f"Casino '{nome}' nao encontrado."
 
 def listar_todos_casinos():
+    carregar_casinos()
     lista = list(base_casinos.values())
     return 200, lista
 
 def total_casinos():
+    carregar_casinos()
     return len(base_casinos)
 
 def listar_casinos_disponiveis():
+    carregar_casinos()
     return [(c["id"], c["nome"]) for c in base_casinos.values()]
 
 
@@ -126,6 +152,7 @@ def listar_casinos_disponiveis():
 # ══════════════════════════════════════════════════════════════
 
 def atualizar_casino(id_casino, campo, valor):
+    carregar_casinos()
     c = base_casinos.get(str(id_casino).strip().upper())
     if not c:
         return 404, "Casino nao encontrado."
@@ -139,6 +166,7 @@ def atualizar_casino(id_casino, campo, valor):
         if not rv["valido"]:
             return 422, rv["mensagem"]
         c[campo] = rv["valor"]
+        guardar_casinos()
         return 200, c
 
     return 400, f"Campo '{campo}' nao pode ser editado."
@@ -149,46 +177,10 @@ def atualizar_casino(id_casino, campo, valor):
 # ══════════════════════════════════════════════════════════════
 
 def remover_casino(id_casino):
+    carregar_casinos()
     id_upper = str(id_casino).strip().upper()
     if id_upper not in base_casinos:
         return 404, f"Casino '{id_casino}' nao encontrado."
     c = base_casinos.pop(id_upper)
+    guardar_casinos()
     return 200, c
-
-
-# ══════════════════════════════════════════════════════════════
-#  PERSISTENCIA — guardar / carregar JSON
-# ══════════════════════════════════════════════════════════════
-
-def guardar_ficheiro_casinos():
-    """Guarda base_casinos e contadores_filhos em JSON."""
-    rv = validar_base_para_guardar(base_casinos, "casinos")
-    if not rv["valido"]:
-        return 404, rv["mensagem"]
-    try:
-        dados = {
-            "base_casinos"      : base_casinos,
-            "contadores_filhos" : contadores_filhos,
-        }
-        with open(FICHEIRO_CASINOS, "w", encoding="utf-8") as f:
-            json.dump(dados, f, ensure_ascii=False, indent=2)
-        return 200, f"Casinos guardados com sucesso em '{FICHEIRO_CASINOS}' ({len(base_casinos)} registo(s))."
-    except Exception as e:
-        return 500, f"Erro ao guardar ficheiro: {e}"
-
-
-def carregar_ficheiro_casinos():
-    """Carrega base_casinos e contadores_filhos a partir do JSON."""
-    rv = validar_ficheiro_para_carregar(FICHEIRO_CASINOS, "casinos")
-    if not rv["valido"]:
-        return 404, rv["mensagem"]
-    try:
-        with open(FICHEIRO_CASINOS, "r", encoding="utf-8") as f:
-            dados = json.load(f)
-        base_casinos.clear()
-        base_casinos.update(dados.get("base_casinos", {}))
-        contadores_filhos.clear()
-        contadores_filhos.update(dados.get("contadores_filhos", {}))
-        return 200, f"Casinos carregados com sucesso de '{FICHEIRO_CASINOS}' ({len(base_casinos)} registo(s))."
-    except Exception as e:
-        return 500, f"Erro ao carregar ficheiro: {e}"

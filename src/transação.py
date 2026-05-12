@@ -5,6 +5,7 @@
 # ══════════════════════════════════════════════════════════════
 
 import json
+import os
 from datetime import datetime
 from utils import (
     validar_id_cliente,
@@ -49,6 +50,39 @@ FICHEIRO_TRANSACOES = "transacoes.json"
 # ══════════════════════════════════════════════════════════════
 #  CREATE — 201 Created
 # ══════════════════════════════════════════════════════════════
+
+def guardar_transacoes():
+    with open(FICHEIRO_TRANSACOES, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "base_transacoes": base_transacoes,
+                "pilha_ids_transacao": pilha_ids_transacao
+            },
+            f,
+            indent=4,
+            ensure_ascii=False
+        )
+
+
+def carregar_transacoes():
+    global base_transacoes, pilha_ids_transacao
+
+    if os.path.exists(FICHEIRO_TRANSACOES):
+        with open(FICHEIRO_TRANSACOES, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+
+        base_transacoes.clear()
+        base_transacoes.update(dados.get("base_transacoes", {}))
+
+        pilha_ids_transacao.clear()
+        pilha_ids_transacao.extend(
+            dados.get("pilha_ids_transacao", [1])
+        )
+
+    else:
+        base_transacoes.clear()
+        pilha_ids_transacao.clear()
+        pilha_ids_transacao.append(1)
 
 def criar_transacao(id_cliente, tipo, tipo_movimento,
                     montante, metodo_pagamento, estado="PENDENTE"):
@@ -163,41 +197,3 @@ def remover_transacao(id_transacao):
         return 404, f"Transacao '{id_transacao}' nao encontrada."
     t = base_transacoes.pop(id_upper)
     return 200, t
-
-
-# ══════════════════════════════════════════════════════════════
-#  PERSISTENCIA — guardar / carregar JSON
-# ══════════════════════════════════════════════════════════════
-
-def guardar_ficheiro_transacoes():
-    """Guarda base_transacoes e o contador de IDs em JSON."""
-    rv = validar_base_para_guardar(base_transacoes, "transacoes")
-    if not rv["valido"]:
-        return 404, rv["mensagem"]
-    try:
-        dados = {
-            "base_transacoes"    : base_transacoes,
-            "pilha_ids_transacao": pilha_ids_transacao,
-        }
-        with open(FICHEIRO_TRANSACOES, "w", encoding="utf-8") as f:
-            json.dump(dados, f, ensure_ascii=False, indent=2)
-        return 200, f"Transacoes guardadas com sucesso em '{FICHEIRO_TRANSACOES}' ({len(base_transacoes)} registo(s))."
-    except Exception as e:
-        return 500, f"Erro ao guardar ficheiro: {e}"
-
-
-def carregar_ficheiro_transacoes():
-    """Carrega base_transacoes e o contador de IDs a partir do JSON."""
-    rv = validar_ficheiro_para_carregar(FICHEIRO_TRANSACOES, "transacoes")
-    if not rv["valido"]:
-        return 404, rv["mensagem"]
-    try:
-        with open(FICHEIRO_TRANSACOES, "r", encoding="utf-8") as f:
-            dados = json.load(f)
-        base_transacoes.clear()
-        base_transacoes.update(dados.get("base_transacoes", {}))
-        contador_guardado = dados.get("pilha_ids_transacao", [1])
-        pilha_ids_transacao[0] = contador_guardado[0]
-        return 200, f"Transacoes carregadas com sucesso de '{FICHEIRO_TRANSACOES}' ({len(base_transacoes)} registo(s))."
-    except Exception as e:
-        return 500, f"Erro ao carregar ficheiro: {e}"

@@ -19,7 +19,7 @@ from utils import (
     validar_id_casino,
     gerar_id_filho,
 )
-from casino import base_casinos, contadores_filhos, carregar_casinos
+from casino import  contadores_filhos, carregar_casinos
 
 # Tuplos de valores validos (imutaveis)
 ESTADOS_JOGO = ("ATIVO", "INATIVO")
@@ -86,7 +86,7 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
                nivel_acesso, estado,
                tem_dealer, tem_tabuleiro, tem_pecas,
                tem_cartas, tem_dados, tem_maquina):
-    carregar_casinos()
+    base_casinos = carregar_casinos()
     carregar_jogos()
     try:
         rv = validar_casino_existe(base_casinos)

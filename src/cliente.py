@@ -20,7 +20,7 @@ from utils import (
     validar_id_casino,
     gerar_id_filho,
 )
-from casino import base_casinos, contadores_filhos, carregar_casinos
+from casino import contadores_filhos, carregar_casinos
 
 # Tuplos de valores validos (imutaveis)
 GENEROS_VALIDOS = ("M", "F", "OUTRO")
@@ -75,7 +75,7 @@ def carregar_clientes():
 
 def criar_cliente(id_casino, nome, data_nasc, genero, nacionalidade,
                   contacto, saldo, nivel, estado="ATIVO"):
-    carregar_casinos()
+    base_casinos = carregar_casinos()
     carregar_clientes()
     try:
         rv = validar_casino_existe(base_casinos)

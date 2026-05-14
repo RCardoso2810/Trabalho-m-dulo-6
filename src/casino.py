@@ -59,6 +59,7 @@ def carregar_casinos():
     else:
         base_casinos.clear()
         contadores_filhos.clear()
+    return base_casinos
 
 
 # ══════════════════════════════════════════════════════════════

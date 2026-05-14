@@ -6,20 +6,20 @@
 from casino import (
     criar_casino, ler_casino_por_id, listar_todos_casinos,
     atualizar_casino, remover_casino, listar_casinos_disponiveis,
-    CAMPOS_EDITAVEIS_CASINO,
+    CAMPOS_EDITAVEIS_CASINO
 )
 from cliente import (
     criar_cliente, ler_cliente_por_id, listar_todos_clientes,
-    atualizar_cliente, remover_cliente, CAMPOS_EDITAVEIS_CLIENTE,
+    atualizar_cliente, remover_cliente, CAMPOS_EDITAVEIS_CLIENTE
 )
 from jogo import (
     criar_jogo, ler_jogo_por_id, listar_todos_jogos,
-    atualizar_jogo, remover_jogo, CAMPOS_EDITAVEIS_JOGO,
+    atualizar_jogo, remover_jogo, CAMPOS_EDITAVEIS_JOGO
 )
 from transacao import (
     criar_transacao, ler_transacao_por_id, listar_todas_transacoes,
     listar_transacoes_por_cliente, atualizar_transacao, remover_transacao,
-    CAMPOS_EDITAVEIS_TRANSACAO,
+    CAMPOS_EDITAVEIS_TRANSACAO
 )
 
 
@@ -265,7 +265,6 @@ def menu_jogos():
                 print(f"[{code}] {obj}")
             else:
                 print(f"[{code}] Erro: {obj}")
-
         elif opcao == "0":
             break
         else:
@@ -349,7 +348,6 @@ def menu_transacoes():
                 print(f"[{code}] {obj}")
             else:
                 print(f"[{code}] Erro: {obj}")
-
         elif opcao == "0":
             break
         else:

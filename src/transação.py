@@ -4,6 +4,8 @@
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
 # ══════════════════════════════════════════════════════════════
 
+import json
+import os
 from datetime import datetime
 from utils import (
     validar_id_cliente,
@@ -16,6 +18,8 @@ from utils import (
     TIPOS_MOVIMENTO_VALIDOS,
     METODOS_PAGAMENTO_VALIDOS,
     ESTADOS_TRANSACAO_VALIDOS,
+    validar_base_para_guardar,
+    validar_ficheiro_para_carregar,
 )
 
 # ── Dicionario principal: { "TRN00001": { campo: valor, ... } }
@@ -39,10 +43,46 @@ VALIDACOES_TRANSACAO = {
     "estado"           : validar_estado_transacao,
 }
 
+# ── Caminho do ficheiro JSON de persistencia
+FICHEIRO_TRANSACOES = "transacoes.json"
+
 
 # ══════════════════════════════════════════════════════════════
 #  CREATE — 201 Created
 # ══════════════════════════════════════════════════════════════
+
+def guardar_transacoes():
+    with open(FICHEIRO_TRANSACOES, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "base_transacoes": base_transacoes,
+                "pilha_ids_transacao": pilha_ids_transacao
+            },
+            f,
+            indent=4,
+            ensure_ascii=False
+        )
+
+
+def carregar_transacoes():
+    global base_transacoes, pilha_ids_transacao
+
+    if os.path.exists(FICHEIRO_TRANSACOES):
+        with open(FICHEIRO_TRANSACOES, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+
+        base_transacoes.clear()
+        base_transacoes.update(dados.get("base_transacoes", {}))
+
+        pilha_ids_transacao.clear()
+        pilha_ids_transacao.extend(
+            dados.get("pilha_ids_transacao", [1])
+        )
+
+    else:
+        base_transacoes.clear()
+        pilha_ids_transacao.clear()
+        pilha_ids_transacao.append(1)
 
 def criar_transacao(id_cliente, tipo, tipo_movimento,
                     montante, metodo_pagamento, estado="PENDENTE"):
@@ -156,4 +196,4 @@ def remover_transacao(id_transacao):
     if id_upper not in base_transacoes:
         return 404, f"Transacao '{id_transacao}' nao encontrada."
     t = base_transacoes.pop(id_upper)
-    return 200, f"Transacao '{t['id']}' removida com sucesso."
+    return 200, t

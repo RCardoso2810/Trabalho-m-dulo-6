@@ -78,6 +78,35 @@ def _e_telefone_valido(texto):
 
 
 # ══════════════════════════════════════════════════════════════
+#  VALIDACOES — PERSISTENCIA (guardar / carregar)
+# ══════════════════════════════════════════════════════════════
+
+def validar_base_para_guardar(base, nome_entidade="registos"):
+    """Verifica se a base tem dados antes de guardar."""
+    if not base:
+        return _erro(
+            f"Nao ha {nome_entidade} para guardar. Crie pelo menos um registo primeiro.",
+            404
+        )
+    return _ok(True)
+
+def validar_ficheiro_para_carregar(caminho_ficheiro, nome_entidade="registos"):
+    """Verifica se o ficheiro JSON existe e nao esta vazio antes de carregar."""
+    import os
+    if not os.path.exists(caminho_ficheiro):
+        return _erro(
+            f"Ficheiro '{caminho_ficheiro}' nao encontrado. Nao ha {nome_entidade} guardados.",
+            404
+        )
+    if os.path.getsize(caminho_ficheiro) == 0:
+        return _erro(
+            f"Ficheiro '{caminho_ficheiro}' esta vazio. Nao ha {nome_entidade} para carregar.",
+            404
+        )
+    return _ok(True)
+
+
+# ══════════════════════════════════════════════════════════════
 #  GERACAO DE IDs
 # ══════════════════════════════════════════════════════════════
 

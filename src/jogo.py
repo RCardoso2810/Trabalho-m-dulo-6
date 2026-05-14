@@ -4,6 +4,8 @@
 #  Estruturas: tuplos, listas, sets, dicionarios, date, defs
 # ══════════════════════════════════════════════════════════════
 
+import json
+import os
 from datetime import date
 from utils import (
     validar_nome_jogo,
@@ -17,7 +19,8 @@ from utils import (
     validar_id_casino,
     gerar_id_filho,
 )
-from casino import base_casinos, contadores_filhos
+from casino import  contadores_filhos, carregar_casinos
+
 # Tuplos de valores validos (imutaveis)
 ESTADOS_JOGO = ("ATIVO", "INATIVO")
 NIVEIS_JOGO  = ("BRONZE", "PRATA", "OURO", "PLATINA", "VIP")
@@ -54,6 +57,26 @@ VALIDACOES_TIPOS_JOGO = {
     "maquina"   : lambda v: validar_sim_nao(v, "maquina"),
 }
 
+FICHEIRO_JOGOS = "jogos.json"
+
+
+# ══════════════════════════════════════════════════════════════
+#  PERSISTENCIA
+# ══════════════════════════════════════════════════════════════
+
+def guardar_jogos():
+    with open(FICHEIRO_JOGOS, "w", encoding="utf-8") as f:
+        json.dump(base_jogos, f, indent=4, ensure_ascii=False)
+
+def carregar_jogos():
+    global base_jogos
+    if os.path.exists(FICHEIRO_JOGOS):
+        with open(FICHEIRO_JOGOS, "r", encoding="utf-8") as f:
+            base_jogos.clear()
+            base_jogos.update(json.load(f))
+    else:
+        base_jogos.clear()
+
 
 # ══════════════════════════════════════════════════════════════
 #  CREATE — 201 Created
@@ -63,8 +86,9 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
                nivel_acesso, estado,
                tem_dealer, tem_tabuleiro, tem_pecas,
                tem_cartas, tem_dados, tem_maquina):
+    base_casinos = carregar_casinos()
+    carregar_jogos()
     try:
-        # ── Verifica se existe casino ─────────────────────────
         rv = validar_casino_existe(base_casinos)
         if not rv["valido"]:
             return 404, rv["mensagem"]
@@ -74,7 +98,6 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
             return 404, rv["mensagem"]
         id_cas_ok = rv["valor"]
 
-        # ── Validacoes dos campos ─────────────────────────────
         rv = validar_nome_jogo(nome)
         if not rv["valido"]:
             return 422, rv["mensagem"]
@@ -104,7 +127,6 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
             return 422, rv["mensagem"]
         estado_ok = rv["valor"]
 
-        # ── Validacao dos tipos (sub-dicionario) ──────────────
         entradas_tipos = (
             ("dealer",    tem_dealer),
             ("tabuleiro", tem_tabuleiro),
@@ -120,7 +142,6 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
                 return 422, rv["mensagem"]
             tipos[campo_t] = rv["valor"]
 
-        # ── Construcao do registo ─────────────────────────────
         id_jogo = gerar_id_filho(id_cas_ok, contadores_filhos, "jogo")
 
         hoje = date.today()
@@ -137,7 +158,7 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
             "tipos"        : tipos,
         }
         base_jogos[id_jogo] = jogo
-        
+        guardar_jogos()
         return 201, jogo
 
     except Exception as e:
@@ -149,26 +170,31 @@ def criar_jogo(id_casino, nome, custo_minimo, saldo_jogo, retorno,
 # ══════════════════════════════════════════════════════════════
 
 def ler_jogo_por_id(id_jogo):
+    carregar_jogos()
     j = base_jogos.get(str(id_jogo).upper())
     if not j:
         return 404, "Jogo nao encontrado."
     return 200, j
 
 def ler_jogo_por_nome(nome):
+    carregar_jogos()
     for j in base_jogos.values():
         if j["nome"].lower() == str(nome).strip().lower():
             return 200, j
     return 404, f"Jogo '{nome}' nao encontrado."
 
 def listar_todos_jogos():
+    carregar_jogos()
     lista = list(base_jogos.values())
     return 200, lista
 
 def listar_jogos_ativos():
+    carregar_jogos()
     lista = [j for j in base_jogos.values() if j["estado"] == "ATIVO"]
     return 200, lista
 
 def total_jogos():
+    carregar_jogos()
     return len(base_jogos)
 
 
@@ -177,6 +203,7 @@ def total_jogos():
 # ══════════════════════════════════════════════════════════════
 
 def atualizar_jogo(id_jogo, campo, valor):
+    carregar_jogos()
     j = base_jogos.get(str(id_jogo).upper())
     if not j:
         return 404, f"Jogo '{id_jogo}' nao encontrado."
@@ -190,6 +217,7 @@ def atualizar_jogo(id_jogo, campo, valor):
         if not rv["valido"]:
             return 422, rv["mensagem"]
         j[campo] = rv["valor"]
+        guardar_jogos()
         return 200, j
 
     if campo in CAMPOS_TIPOS:
@@ -197,6 +225,7 @@ def atualizar_jogo(id_jogo, campo, valor):
         if not rv["valido"]:
             return 422, rv["mensagem"]
         j["tipos"][campo] = rv["valor"]
+        guardar_jogos()
         return 200, j
 
     return 400, f"Campo '{campo}' nao pode ser editado."
@@ -207,8 +236,10 @@ def atualizar_jogo(id_jogo, campo, valor):
 # ══════════════════════════════════════════════════════════════
 
 def remover_jogo(id_jogo):
+    carregar_jogos()
     id_upper = str(id_jogo).upper()
     if id_upper not in base_jogos:
         return 404, f"Jogo '{id_jogo}' nao encontrado."
     j = base_jogos.pop(id_upper)
+    guardar_jogos()
     return 200, j
